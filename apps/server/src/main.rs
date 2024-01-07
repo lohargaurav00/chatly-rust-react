@@ -1,22 +1,19 @@
-use axum::{
-    routing::get,
-    Router,
-};
-use tokio::net::TcpListener;
+use axum::{routing::get, Router};
 use dotenv::dotenv;
-use std::env;
+use serde_json::Value;
 use socketioxide::{
-    extract::{AckSender, SocketRef, Bin, Data},
+    extract::{AckSender, Bin, Data, SocketRef},
     SocketIo,
 };
-use serde_json::Value;
+use std::env;
+use tokio::net::TcpListener;
+use tower::ServiceBuilder;
+use tower_http::cors::CorsLayer;
 use tracing::info;
 // use tracing_subscriber::FmtSubscriber;
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // tracing::subscriber::set_global_default(FmtSubscriber::default())?;
     dotenv().ok();
 
@@ -25,14 +22,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (layer, io) = SocketIo::new_layer();
 
-    io.ns("/", |socket: SocketRef, Data(data): Data<Value>|{
+    io.ns("/", |socket: SocketRef, Data(data): Data<Value>| {
         info!("Socket.IO connected: {:?} {:?}", socket.ns(), socket.id);
         socket.emit("msg", "Hello from socket");
     });
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
-        .layer(layer);
+        .layer(
+            ServiceBuilder::new()
+                .layer(CorsLayer::permissive())
+                .layer(layer),  
+        );
 
     let lister = TcpListener::bind(url).await?;
     axum::serve(lister, app).await?;
