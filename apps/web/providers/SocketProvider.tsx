@@ -20,7 +20,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   }
 
   useEffect(() => {
-    const _socket = io('http://localhost:4200');
+    const _socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || '');
     _socket.on('connect', () => {
       console.log('socket connected');
     });
