@@ -16,6 +16,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     socket.on('msg', (data) => {
       console.log('data from server: ', data);
     });
+    
   }
 
   useEffect(() => {
