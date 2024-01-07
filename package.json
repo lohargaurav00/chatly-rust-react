@@ -1,5 +1,5 @@
 {
-  "name": "@chat-app-rust-react/source",
+  "name": "@chatly-react-rust/source",
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
@@ -8,6 +8,7 @@
     "next": "13.4.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "socket.io-client": "^4.7.3",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
@@ -46,5 +47,8 @@
     "ts-node": "10.9.1",
     "typescript": "~5.2.2"
   },
-  "packageManager": "yarn@3.5.0"
+  "packageManager": "yarn@3.5.0",
+  "workspaces": [
+    "apps/*"
+  ]
 }

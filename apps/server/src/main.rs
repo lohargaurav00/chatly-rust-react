@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (layer, io) = SocketIo::new_layer();
 
     io.ns("/", |socket: SocketRef, Data(data): Data<Value>| {
-        info!("Socket.IO connected: {:?} {:?}", socket.ns(), socket.id);
+        println!("Socket.IO connected: {:?} {:?}", socket.ns(), socket.id);
         socket.emit("msg", "Hello from socket");
     });
 
@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())
-                .layer(layer),  
+                .layer(layer),
         );
 
     let lister = TcpListener::bind(url).await?;
