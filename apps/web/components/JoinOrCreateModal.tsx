@@ -1,5 +1,7 @@
 'use client';
 import React, { useState } from 'react';
+import ShortUniqueId from 'short-unique-id';
+import { HiOutlineClipboardCopy } from 'react-icons/hi';
 
 import {
   Dialog,
@@ -7,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from './ui/dialog';
 import { useModalStore } from '../hooks';
@@ -20,9 +21,17 @@ const JoinOrCreateModal = () => {
   const [roomId, setRoomId] = useState<string>('');
 
   const { isOpen, setOpenClose } = useModalStore();
+  const { randomUUID } = new ShortUniqueId({ length: 10 });
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => setOpenClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={() => {
+        setOpenClose();
+        setIsCreate(false);
+        setRoomId('');
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" className="text-black">
           Join
@@ -35,17 +44,24 @@ const JoinOrCreateModal = () => {
           </DialogTitle>
         </DialogHeader>
         {isCreate ? (
-          <div>
-            <span>Generate Room Id</span>
-            <div className="flex flex-col gap-4 py-4 border border-gray-400 w-full">
-              <span className="p-4 w-full text-center text-lg font-semibold text-black">
-                mkkmkmkmmk
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 py-4 ">
+              <span>Generated Room Id</span>
+              <span className="w-full p-4 text-center text-lg font-semibold text-black border border-gray-300 rounded-md relative">
+                {roomId}
+                <HiOutlineClipboardCopy
+                  className="absolute h-8 w-8 right-2 cursor-pointer top-3"
+                  onClick={() => {
+                    navigator.clipboard.writeText(roomId);
+                    setOpenClose();
+                  }}
+                />
               </span>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4 py-4">
-            <Label htmlFor="name" className="text-right">
+          <div className="flex flex-col gap-4 py-4 justify-start ">
+            <Label htmlFor="name" className="text-left text-base">
               Enter Room Id
             </Label>
             <Input
@@ -56,8 +72,23 @@ const JoinOrCreateModal = () => {
           </div>
         )}
 
-        <DialogFooter>
-          <Button type="submit"> Join Room</Button>
+        <DialogFooter className="gap-2">
+          {!isCreate && (
+            <div className="flex items-center justify-end gap-2 text-sm ">
+              {"Don't have a room?"}
+              <Button
+                variant="link"
+                className="px-0 text-base"
+                onClick={() => {
+                  setIsCreate(true);
+                  setRoomId(randomUUID());
+                }}
+              >
+                Create Room
+              </Button>
+            </div>
+          )}
+          <Button type="submit">Join Room</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
