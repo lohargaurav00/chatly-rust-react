@@ -5,6 +5,16 @@ edition = "2021"
 
 
 [dependencies]
+socketioxide.workspace = true
+tokio.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+dotenv.workspace = true
+tracing.workspace = true
 
+
+[dev-dependencies]
+cargo-watch = "8.5.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
