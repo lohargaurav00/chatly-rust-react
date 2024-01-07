@@ -34,21 +34,30 @@ const JoinOrCreateModal = () => {
             {isCreate ? 'Create Room' : 'Join Room'}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
+        {isCreate ? (
+          <div>
+            <span>Generate Room Id</span>
+            <div className="flex flex-col gap-4 py-4 border border-gray-400 w-full">
+              <span className="p-4 w-full text-center text-lg font-semibold text-black">
+                mkkmkmkmmk
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 py-4">
             <Label htmlFor="name" className="text-right">
               Enter Room Id
             </Label>
             <Input
               id="name"
               value={roomId}
-              className="col-span-3"
               onChange={(e) => setRoomId(e.target.value)}
             />
           </div>
-        </div>
+        )}
+
         <DialogFooter>
-          <Button type="submit">Save changes</Button>
+          <Button type="submit"> Join Room</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
