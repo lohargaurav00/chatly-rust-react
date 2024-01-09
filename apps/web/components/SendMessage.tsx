@@ -1,0 +1,36 @@
+import React, { useState } from 'react';
+
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { useRoomStore, useSocket } from '../hooks';
+
+const SendMessage = () => {
+  const [message, setMessage] = useState<string>('');
+
+  const { sendMessage } = useSocket();
+  const { room } = useRoomStore();
+
+  const handleSendMessage = () => {
+    const _message = {
+      message,
+      roomId: room,
+    };
+    sendMessage(_message);
+    setMessage('');
+  };
+
+  return (
+    <div className="inline-flex gap-3">
+      <Input
+        id="name"
+        className="w-[400px]"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message here..."
+      />
+      <Button onClick={handleSendMessage}>Send</Button>
+    </div>
+  );
+};
+
+export default SendMessage;

@@ -1,32 +1,74 @@
 use axum::{routing::get, Router};
 use dotenv::dotenv;
-use serde_json::Value;
+use serde_json::{Value, json};
 use socketioxide::{
-    extract::{AckSender, Bin, Data, SocketRef},
+    extract::{Data, SocketRef},
     SocketIo,
 };
 use std::env;
+use tracing::info;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
-use tracing::info;
-// use tracing_subscriber::FmtSubscriber;
+
+#[derive(serde::Deserialize, Debug)]
+struct Message {
+    #[serde(rename = "roomId")]
+    room_id: String,
+    message: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // tracing::subscriber::set_global_default(FmtSubscriber::default())?;
     dotenv().ok();
 
-    let port = env::var("PORT").unwrap_or_else(|_| "8000".to_string());
-    let url = format!("0.0.0.0:{}", port);
-
+    // Initialize Socket.IO
     let (layer, io) = SocketIo::new_layer();
 
-    io.ns("/", |socket: SocketRef, Data(data): Data<Value>| {
-        println!("Socket.IO connected: {:?} {:?}", socket.ns(), socket.id);
-        socket.emit("msg", "Hello from socket");
+    // Define the Socket.IO namespace and its event handlers
+    io.ns("/", |socket: SocketRef| {
+        info!(
+            "Socket connected to ns: {:?}, id: {:?}",
+            socket.ns(),
+            socket.id
+        );
+        socket.on(
+            "join-room",
+            |socket: SocketRef, Data::<String>(room)| async move {
+                info!("Joining room: {:?}", room);
+                socket.join(room.clone()).unwrap_or_else(|e| {
+                    println!("Error: {:?}", e);
+                });
+                let _ = socket
+                    .within(room)
+                    .emit("joined-room", format!("{:?} Joined the room", socket.id));
+            },
+        );
+
+        socket.on("send-message" ,|socket: SocketRef, Data::<Value>(message)| async move {
+            info!("Message: {:?}", message);
+
+            //parse message with serde_json
+            let parsed_message: Message = match serde_json::from_value::<Message>(message.clone())
+                {
+                Ok(v) => v,
+                Err(e) => {
+                    println!("Error: {:?}", e);
+                    return;
+                }
+            };
+
+            let _ = socket
+                .within(parsed_message.room_id)
+                .emit("message", json!({
+                    "message": parsed_message.message,
+                    "sender": socket.id,
+                    "time": chrono::Local::now().to_string()
+                }));
+        });
     });
 
+    // Set up Axum
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .layer(
@@ -35,8 +77,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .layer(layer),
         );
 
-    let lister = TcpListener::bind(url).await?;
-    axum::serve(lister, app).await?;
+    // Start the Axum server
+    let port = env::var("PORT").unwrap_or_else(|_| "8000".to_string());
+    let url = format!("0.0.0.0:{}", port);
+    let listener = TcpListener::bind(&url).await?;
+    axum::serve(listener, app.into_make_service()).await?;
 
     Ok(())
 }

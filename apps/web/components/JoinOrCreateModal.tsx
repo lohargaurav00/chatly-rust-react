@@ -11,17 +11,25 @@ import {
   DialogTitle,
   DialogFooter,
 } from './ui/dialog';
-import { useModalStore } from '../hooks';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { useModalStore, useRoomStore, useSocket } from '../hooks';
 
 const JoinOrCreateModal = () => {
   const [isCreate, setIsCreate] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>('');
 
   const { isOpen, setOpenClose } = useModalStore();
+  const { setRoom } = useRoomStore();
+  const { joinRoom } = useSocket();
   const { randomUUID } = new ShortUniqueId({ length: 10 });
+
+  const handleJoinRoom = () => {
+    joinRoom(roomId);
+    setRoom(roomId);
+    setOpenClose();
+  };
 
   return (
     <Dialog
@@ -88,7 +96,9 @@ const JoinOrCreateModal = () => {
               </Button>
             </div>
           )}
-          <Button type="submit">Join Room</Button>
+          <Button type="submit" onClick={handleJoinRoom}>
+            Join Room
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
