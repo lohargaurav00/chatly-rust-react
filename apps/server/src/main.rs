@@ -1,71 +1,39 @@
+mod redis;
+mod socket_handlers;
+
 use axum::{routing::get, Router};
 use dotenv::dotenv;
-use serde_json::{Value, json};
-use socketioxide::{
-    extract::{Data, SocketRef},
-    SocketIo,
-};
-use std::env;
-use tracing::info;
+use socketioxide::{extract::SocketRef, SocketIo};
+use std::{env, sync::Arc};
 use tokio::net::TcpListener;
+use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
+use tracing::info;
+use tracing_subscriber::FmtSubscriber;
 
-#[derive(serde::Deserialize, Debug)]
-struct Message {
-    #[serde(rename = "roomId")]
-    room_id: String,
-    message: String,
-}
+use redis::Redis;
+use socket_handlers::SocketHandlers;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // a builder for `FmtSubscriber`.
+    tracing::subscriber::set_global_default(FmtSubscriber::default())?;
+
+    info!("Starting server...");
+
     dotenv().ok();
 
     // Initialize Socket.IO
     let (layer, io) = SocketIo::new_layer();
 
-    // Define the Socket.IO namespace and its event handlers
-    io.ns("/", |socket: SocketRef| {
-        info!(
-            "Socket connected to ns: {:?}, id: {:?}",
-            socket.ns(),
-            socket.id
-        );
-        socket.on(
-            "join-room",
-            |socket: SocketRef, Data::<String>(room)| async move {
-                info!("Joining room: {:?}", room);
-                socket.join(room.clone()).unwrap_or_else(|e| {
-                    println!("Error: {:?}", e);
-                });
-                let _ = socket
-                    .within(room)
-                    .emit("joined-room", format!("{:?} Joined the room", socket.id));
-            },
-        );
+    // Initialize Redis
+    let redis = Arc::new(Mutex::new(Redis::new().await?));
 
-        socket.on("send-message" ,|socket: SocketRef, Data::<Value>(message)| async move {
-            info!("Message: {:?}", message);
 
-            //parse message with serde_json
-            let parsed_message: Message = match serde_json::from_value::<Message>(message.clone())
-                {
-                Ok(v) => v,
-                Err(e) => {
-                    println!("Error: {:?}", e);
-                    return;
-                }
-            };
-
-            let _ = socket
-                .within(parsed_message.room_id)
-                .emit("message", json!({
-                    "message": parsed_message.message,
-                    "sender": socket.id,
-                    "time": chrono::Local::now().to_string()
-                }));
-        });
+    io.ns("/", |socket: SocketRef| async move {
+        info!("Socket connected to ns: {:?}, id: {:?}", socket.ns(), socket.id);
+        SocketHandlers::handle_sockets(socket, redis).await;
     });
 
     // Set up Axum
