@@ -2181,6 +2181,7 @@ dependencies = [
  "cargo-watch",
  "chrono",
  "dotenv",
+ "futures-util",
  "redis",
  "serde",
  "serde_json",
