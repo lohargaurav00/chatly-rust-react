@@ -55,6 +55,7 @@ impl SocketHandlers {
 async fn handle_join_room(socket: SocketRef, room: String, redis: Arc<Mutex<Redis>>) {
     info!("Joining room: {:?}", room);
 
+    let _ = socket.leave_all();
     if let Err(e) = socket.join(room.clone()) {
         error!("Error joining room: {:?}", e);
     }
@@ -111,6 +112,7 @@ async fn handle_send_message(socket: SocketRef, message: Value, redis: Arc<Mutex
         error!("Error publishing message to Redis: {:?}", e);
     }
 }
+
 pub async fn redis_subscription_handler(
     redis: Arc<Mutex<Redis>>,
     socket: SocketRef,
@@ -149,7 +151,7 @@ pub async fn redis_subscription_handler(
             };
 
             // Emit the message to the socket
-            socket.to(room_id).emit("message", payload).unwrap();
+            socket.within(room_id).emit("message", payload).unwrap();
 
             // Introduce a delay between processing each message
             tokio::time::sleep(delay).await;

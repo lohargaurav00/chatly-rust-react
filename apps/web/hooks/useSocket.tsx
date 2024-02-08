@@ -37,6 +37,7 @@ const useSocket = (): UseSocket => {
     });
 
     _socket.on('message', (message) => {
+      console.log(message)
       setMessages(message);
     });
 
