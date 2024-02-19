@@ -1,0 +1,25 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+socketioxide = "0.10.0"
+tokio = { version = "1.35.1", features = ["full"] }
+axum = "0.7.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dotenv = "0.15.0"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+tower = { version = "0.4", features = ["full"] }
+tower-http = { version = "0.5.0", features = ["cors", "fs"] }
+chrono = "0.4.31"
+redis = { git = "https://github.com/redis-rs/redis-rs.git", branch = "main", features = ["aio","tokio-comp"] }
+futures-util = "0.3.30"
+
+[dev-dependencies]
+cargo-watch = "8.5.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
