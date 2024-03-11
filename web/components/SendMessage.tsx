@@ -26,6 +26,7 @@ const SendMessage = () => {
         className="w-[400px]"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={(e)=>{if(e.key === 'Enter') handleSendMessage()}}
         placeholder="Type your message here..."
       />
       <Button onClick={handleSendMessage}>Send</Button>
