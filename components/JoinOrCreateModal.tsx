@@ -1,7 +1,7 @@
-'use client';
-import React, { useState } from 'react';
-import ShortUniqueId from 'short-unique-id';
-import { HiOutlineClipboardCopy } from 'react-icons/hi';
+"use client";
+import React, { useState } from "react";
+import ShortUniqueId from "short-unique-id";
+import { HiOutlineClipboardCopy } from "react-icons/hi";
 
 import {
   Dialog,
@@ -10,15 +10,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from './ui/dialog';
-import { Button } from './ui/button';
-import { Label } from './ui/label';
-import { Input } from './ui/input';
-import { useModalStore, useRoomStore, useSocket } from '../hooks';
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import { useModalStore, useRoomStore } from "../hooks";
+import { useSocket } from "@/providers";
 
 const JoinOrCreateModal = () => {
   const [isCreate, setIsCreate] = useState<boolean>(false);
-  const [roomId, setRoomId] = useState<string>('');
+  const [roomId, setRoomId] = useState<string>("");
 
   const { isOpen, setOpenClose } = useModalStore();
   const { setRoom } = useRoomStore();
@@ -37,7 +38,7 @@ const JoinOrCreateModal = () => {
       onOpenChange={() => {
         setOpenClose();
         setIsCreate(false);
-        setRoomId('');
+        setRoomId("");
       }}
     >
       <DialogTrigger asChild>
@@ -48,7 +49,7 @@ const JoinOrCreateModal = () => {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="w-full text-center">
-            {isCreate ? 'Create Room' : 'Join Room'}
+            {isCreate ? "Create Room" : "Join Room"}
           </DialogTitle>
         </DialogHeader>
         {isCreate ? (
