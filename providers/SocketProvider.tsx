@@ -16,6 +16,7 @@ type SocketContextType = {
 
 const SocketContext = React.createContext<SocketContextType | null>(null);
 
+
 export const useSocket = () => {
   const context = React.useContext(SocketContext);
   if (!context) {
@@ -42,18 +43,19 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   React.useEffect(() => {
     const _socket = new WebSocket(
-      process.env.NEXT_PUBLIC_SOCKET_URL || "ws://localhost:4000"
+      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000/ws"
     );
 
     _socket.onopen = () => {
       console.log("WebSocket connected");
-      // _socket.send(JSON.stringify({ type: "ping", data: "pinging..." }));
+      // _socket.send(JSON.stringify({ type: "text", data: "pinging..." }));
     };
 
     _socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       if (message.type !== "message") return;
-      setMessages((prev) => [...prev, message]);
+      console.log("Received message", message);
+      // setMessages((prev) => [...prev, message]);
     };
 
     _socket.onclose = () => {

@@ -20,7 +20,6 @@ start_backend_fallback() {
     (cd server && cargo run)
 }
 
-
 # Function to start the backend
 start_backend() {
     echo "Starting Backend"
@@ -28,6 +27,23 @@ start_backend() {
     BACKEND_PID=$!
     echo "Backend Started with PID $BACKEND_PID"
 }
+
+# Function to handle termination signals
+cleanup() {
+    echo "Cleaning up..."
+    if [ -n "$FRONTEND_PID" ]; then
+        echo "Stopping Frontend with PID $FRONTEND_PID"
+        kill "$FRONTEND_PID" 2>/dev/null
+    fi
+    if [ -n "$BACKEND_PID" ]; then
+        echo "Stopping Backend with PID $BACKEND_PID"
+        kill "$BACKEND_PID" 2>/dev/null
+    fi
+    exit 0
+}
+
+# Trap termination signals and call cleanup
+trap cleanup SIGINT SIGTERM || trap cleanup INT TERM
 
 # Main script execution
 echo "Starting Execution"
@@ -37,6 +53,5 @@ start_backend
 
 # Wait for both processes to complete
 wait $FRONTEND_PID $BACKEND_PID
-# wait $FRONTEND_PID
 
 echo "Execution Completed"
