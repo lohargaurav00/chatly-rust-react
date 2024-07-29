@@ -30,13 +30,32 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   const joinRoom: SocketContextType["joinRoom"] = (roomId) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ chat_type: "join-room", roomId }));
+      if (roomId === "create"){
+        socket.send(
+          JSON.stringify({
+            mode: "CreateRoom",
+            message: JSON.stringify({ room_id: "1234", name: "gaurav" }),
+          })
+        );
+        return;
+      }
+      socket.send(
+        JSON.stringify({
+          mode: "JoinRoom",
+          message: JSON.stringify({ id: "a0000e13-56f4-4c9d-adbc-e934a1d35b3e", room_id: "1234" }),
+        })
+      );
     }
   };
 
   const sendMessage: SocketContextType["sendMessage"] = (message) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ chat_type: "send-message", ...message }));
+      socket.send(
+        JSON.stringify({
+          mode: "Chat",
+          message: JSON.stringify({ chat_type: "send-message", ...message, room_id: "1234" }),
+        })
+      );
     }
   };
 
@@ -52,9 +71,9 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     _socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      console.log("chat_type", message.chat_type);
+      console.log("chat_type", message);
       if (message.chat_type !== "message") return;
-      console.log("Received message", message);
+      // console.log("Received message", message);
       setMessages((prev) => [...prev, message]);
     };
 

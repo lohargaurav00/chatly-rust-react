@@ -21,7 +21,6 @@ pub async fn ws_handler(
     let resp = ws::start(
         session::MyWs {
             id: Uuid::new_v4(),
-            room: "main".to_string(),
             hb: Instant::now(),
             addr: srv.get_ref().clone(),
         },

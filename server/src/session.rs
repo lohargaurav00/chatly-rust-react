@@ -6,16 +6,29 @@ use serde_json;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
-use crate::server::{self, ClientMessage};
+use crate::server::{self, ClientMessage, CreateRoom, JoinRoom};
 
 const HEARTBEAT: Duration = Duration::from_secs(5);
 const CLINT_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct MyWs {
     pub id: Uuid,
-    pub room: String,
     pub hb: Instant,
     pub addr: Addr<server::ChatServer>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Mode {
+    Chat,
+    JoinRoom,
+    CreateRoom,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ClientInteraction {
+    id: Option<Uuid>,
+    mode: Mode,
+    message: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -80,27 +93,69 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
                 self.hb = Instant::now();
             }
             ws::Message::Text(text) => {
-                let json_msg = serde_json::from_str::<ChatMessage>(&text.to_string());
+                let json_msg = serde_json::from_str::<ClientInteraction>(&text.to_string());
                 if let Err(err) = json_msg {
                     println!("{err}");
                     println!("Failed To Parse Message: {}", text);
                     return;
                 }
                 let inp_msg = json_msg.as_ref().unwrap();
-                let chat_msg = ChatMessage {
-                    id: Some(self.id.clone()),
-                    chat_type: "message".to_string(),
-                    message: inp_msg.message.clone(),
-                    room_id: inp_msg.room_id.clone(),
-                };
+                match inp_msg.mode {
+                    Mode::JoinRoom => {
+                        let inp = serde_json::from_str::<JoinRoom>(&inp_msg.message);
+                        if let Err(err) = inp {
+                            println!("{err}");
+                            println!("Failed To Parse Message: {}", inp_msg.message);
+                            return;
+                        }
+                        let inp_msg = inp.as_ref().unwrap();
+                        self.addr.do_send(server::JoinRoom {
+                            id: self.id,
+                            room_id: inp_msg.room_id.clone(),
+                        });
+                        return;
+                    }
+                    Mode::CreateRoom => {
+                        let inp = serde_json::from_str::<CreateRoom>(&inp_msg.message);
+                        if let Err(err) = inp {
+                            println!("{err}");
+                            println!("Failed To Parse Message: {}", inp_msg.message);
+                            return;
+                        }
+                        let inp_msg = inp.as_ref().unwrap();
+                        self.addr.do_send(server::CreateRoom {
+                            id: Some(self.id),
+                            room_id: inp_msg.room_id.clone(),
+                            name: inp_msg.name.clone(),
+                        });
+                        return;
+                    }
+                    Mode::Chat => {
+                        let inp = serde_json::from_str::<ChatMessage>(&inp_msg.message);
+                        if let Err(err) = inp {
+                            println!("{err}");
+                            println!("Failed To Parse Message: {}", inp_msg.message);
+                            return;
+                        }
 
-                let msg = serde_json::to_string(&chat_msg).unwrap();
+                        let inp_msg = inp.as_ref().unwrap();
 
-                self.addr.do_send(ClientMessage {
-                    id: self.id,
-                    msg,
-                    room: self.room.clone(),
-                })
+                        let chat_msg = ChatMessage {
+                            id: Some(self.id),
+                            chat_type: "message".to_string(),
+                            message: inp_msg.message.clone(),
+                            room_id: inp_msg.room_id.clone(),
+                        };
+
+                        let msg = serde_json::to_string(&chat_msg).unwrap();
+
+                        self.addr.do_send(ClientMessage {
+                            id: self.id,
+                            msg,
+                            room: inp_msg.room_id.clone(),
+                        })
+                    }
+                }
             }
             ws::Message::Binary(bin) => ctx.binary(bin),
             ws::Message::Close(reason) => {
