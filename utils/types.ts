@@ -1,10 +1,11 @@
 export type sendMessageT = {
   message: string;
-  roomId: string;
+  room_id: string;
 };
 
 export type receivedMessageT = {
   message: string;
-  sender: string;
+  // sender: string;
+  id: number;
   time: string;
 };

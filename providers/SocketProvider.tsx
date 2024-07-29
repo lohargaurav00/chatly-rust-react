@@ -16,7 +16,6 @@ type SocketContextType = {
 
 const SocketContext = React.createContext<SocketContextType | null>(null);
 
-
 export const useSocket = () => {
   const context = React.useContext(SocketContext);
   if (!context) {
@@ -31,13 +30,13 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   const joinRoom: SocketContextType["joinRoom"] = (roomId) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "join-room", roomId }));
+      socket.send(JSON.stringify({ chat_type: "join-room", roomId }));
     }
   };
 
   const sendMessage: SocketContextType["sendMessage"] = (message) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "send-message", message }));
+      socket.send(JSON.stringify({ chat_type: "send-message", ...message }));
     }
   };
 
@@ -53,9 +52,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     _socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      if (message.type !== "message") return;
+      console.log("chat_type", message.chat_type);
+      if (message.chat_type !== "message") return;
       console.log("Received message", message);
-      // setMessages((prev) => [...prev, message]);
+      setMessages((prev) => [...prev, message]);
     };
 
     _socket.onclose = () => {

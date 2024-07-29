@@ -11,7 +11,7 @@ const Messages = () => {
         {messages.map((message, index) => (
           <div key={index} className="inline-flex">
             <p>
-              {message.sender.slice(0, 4)}: {message.message}
+              {String(message.id).slice(0, 4)}: {message.message}
             </p>
           </div>
         ))}

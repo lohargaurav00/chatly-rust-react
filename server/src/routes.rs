@@ -1,7 +1,8 @@
-use std::time::Instant;
 use actix::Addr;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse, Responder};
 use actix_web_actors::ws;
+use std::time::Instant;
+use uuid::Uuid;
 
 use crate::{server, session};
 
@@ -19,7 +20,8 @@ pub async fn ws_handler(
 
     let resp = ws::start(
         session::MyWs {
-            id: 0,
+            id: Uuid::new_v4(),
+            room: "main".to_string(),
             hb: Instant::now(),
             addr: srv.get_ref().clone(),
         },

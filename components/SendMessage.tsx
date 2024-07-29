@@ -14,7 +14,7 @@ const SendMessage = () => {
   const handleSendMessage = () => {
     const _message = {
       message,
-      roomId: room,
+      room_id: room,
     };
     sendMessage(_message);
     setMessage("");

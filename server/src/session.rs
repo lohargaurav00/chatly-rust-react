@@ -1,17 +1,29 @@
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
+use serde::{Deserialize, Serialize};
+use serde_json;
 use std::time::{Duration, Instant};
+use uuid::Uuid;
 
-use crate::server;
+use crate::server::{self, ClientMessage};
 
 const HEARTBEAT: Duration = Duration::from_secs(5);
 const CLINT_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct MyWs {
-    pub id: usize,
+    pub id: Uuid,
+    pub room: String,
     pub hb: Instant,
     pub addr: Addr<server::ChatServer>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ChatMessage {
+    id: Option<Uuid>,
+    chat_type: String,
+    message: String,
+    room_id: String,
 }
 
 impl Actor for MyWs {
@@ -20,7 +32,6 @@ impl Actor for MyWs {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
         let addr = ctx.address();
-        println!("generated addr: {:?}", addr);
 
         self.addr
             .send(server::Connect {
@@ -29,7 +40,7 @@ impl Actor for MyWs {
             .into_actor(self)
             .then(|res, act, ctx| {
                 match res {
-                    Ok(res) => act.id = res,
+                    Ok(_res) => act.id = Uuid::parse_str(&_res).unwrap(),
                     _ => ctx.stop(),
                 }
                 fut::ready(())
@@ -69,7 +80,27 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
                 self.hb = Instant::now();
             }
             ws::Message::Text(text) => {
-                println!("Received message: {}", text);
+                let json_msg = serde_json::from_str::<ChatMessage>(&text.to_string());
+                if let Err(err) = json_msg {
+                    println!("{err}");
+                    println!("Failed To Parse Message: {}", text);
+                    return;
+                }
+                let inp_msg = json_msg.as_ref().unwrap();
+                let chat_msg = ChatMessage {
+                    id: Some(self.id.clone()),
+                    chat_type: "message".to_string(),
+                    message: inp_msg.message.clone(),
+                    room_id: inp_msg.room_id.clone(),
+                };
+
+                let msg = serde_json::to_string(&chat_msg).unwrap();
+
+                self.addr.do_send(ClientMessage {
+                    id: self.id,
+                    msg,
+                    room: self.room.clone(),
+                })
             }
             ws::Message::Binary(bin) => ctx.binary(bin),
             ws::Message::Close(reason) => {
