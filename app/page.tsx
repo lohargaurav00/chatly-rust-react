@@ -1,18 +1,12 @@
-'use client';
-import React from 'react';
-import JoinOrCreateModal from '../components/JoinOrCreateModal';
-import Messages from '../components/Messages';
-import SendMessage from '../components/SendMessage';
+"use client";
+
+import React from "react";
+import { Box, Sidebar } from "@/components/index";
 
 const Page = () => {
   return (
-    <div className="m-3 flex flex-col gap-4">
-      <div className="w-10">
-        <JoinOrCreateModal />
-      </div>
-
-      <SendMessage />
-      <Messages />
+    <div className="bg-primary-foreground w-full h-screen flex flex-col gap-4">
+      <Sidebar />
     </div>
   );
 };
