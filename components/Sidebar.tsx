@@ -3,13 +3,10 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import {
-  MdNightsStay,
-  MdSettings,
-  MdWbSunny,
-} from "react-icons/md";
+import { MdNightsStay, MdSettings, MdWbSunny } from "react-icons/md";
 
 import { sidebarConfig } from "@/configs";
+import { IconSize } from "@/utils";
 import {
   Avatar,
   AvatarFallback,
@@ -31,14 +28,14 @@ const Sidebar: React.FC = () => {
   const router = useRouter();
 
   return (
-    <Box className="w-fit rounded-none h-full flex flex-col justify-between items-center gap-6 shadow-md py-4">
+    <Box className="w-fit rounded-none h-full flex flex-col justify-between items-center gap-6 shadow-md  border-r ">
       <div className="flex flex-col items-center gap-6">
         <Avatar className="cursor-pointer hover:scale-105 duration-200 transition">
           <AvatarImage src="https://github.com/shadcn.png" />
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
         <div className="flex flex-col gap-4 ">
-          {sidebarConfig.map((item, index) => {
+          {sidebarConfig.map((item) => {
             const Icon = item.icon;
             return (
               <React.Fragment key={item.name}>
@@ -58,7 +55,7 @@ const Sidebar: React.FC = () => {
                         }}
                       >
                         <Icon
-                          size={20}
+                          size={IconSize}
                           className="text-primary transition-colors"
                         />
                       </Button>
@@ -77,19 +74,28 @@ const Sidebar: React.FC = () => {
       </div>
       <div className="flex flex-col gap-4">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MdWbSunny
-                size={20}
-                className="rotate-0 text-primary scale-100 duration-300 transition-transform dark:-rotate-90 dark:scale-0"
-              />
-              <MdNightsStay
-                size={20}
-                className="absolute text-primary rotate-90 scale-0  duration-300 transition-transform dark:rotate-0 dark:scale-100"
-              />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          </DropdownMenuTrigger>
+          <TooltipProvider>
+            <Tooltip delayDuration={400}>
+              <DropdownMenuTrigger asChild>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MdWbSunny
+                      size={IconSize}
+                      className="rotate-0 text-primary scale-100 duration-300 transition-transform dark:-rotate-90 dark:scale-0"
+                    />
+                    <MdNightsStay
+                      size={IconSize}
+                      className="absolute text-primary rotate-90 scale-0  duration-300 transition-transform dark:rotate-0 dark:scale-100"
+                    />
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                </TooltipTrigger>
+              </DropdownMenuTrigger>
+              <TooltipContent side="right">
+                <p className="text-xs text-muted-foreground">Toggle theme</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={() => setTheme("light")}>
               Light
@@ -102,6 +108,7 @@ const Sidebar: React.FC = () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
         <TooltipProvider>
           <Tooltip delayDuration={400}>
             <TooltipTrigger asChild>
@@ -111,7 +118,7 @@ const Sidebar: React.FC = () => {
                 className="w-full"
                 onClick={() => {}}
               >
-                <MdSettings size={24} className="text-primary" />
+                <MdSettings size={IconSize} className="text-primary" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">

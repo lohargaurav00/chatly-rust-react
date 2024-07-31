@@ -13,19 +13,19 @@ export const sidebarConfig = [
     },
   },
   {
-    name: "Create Room",
+    name: "Create Group",
     icon: MdGroupAdd,
     path: null,
     action: () => {
-      console.log("Create Room");
+      console.log("Create Group");
     },
   },
   {
-    name: "Join Room",
+    name: "Join Group",
     icon: MdGroups,
     path: null,
     action: () => {
-      console.log("Join Room");
+      console.log("Join Group");
     },
   },
 ];
