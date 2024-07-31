@@ -20,10 +20,13 @@ import { headerConfig } from "@/configs/header";
 const Header = () => {
   return (
     <Box className="inline-flex md:hidden gap-4 w-full rounded-none justify-between items-center border-b shadow-md">
-      <Avatar className="cursor-pointer hover:scale-105 duration-200 transition">
-        <AvatarImage src="https://github.com/shadcn.png" />
-        <AvatarFallback>CN</AvatarFallback>
-      </Avatar>
+      <div className="inline-flex gap-4 items-center">
+        <Avatar className="cursor-pointer hover:scale-105 duration-200 transition">
+          <AvatarImage src="https://github.com/shadcn.png" />
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
+        <h2 className="text-lg">Groups</h2>
+      </div>
       <div className="inline-flex gap-2 sm:gap-4">
         <ToggleTheme />
         <DropdownMenu>

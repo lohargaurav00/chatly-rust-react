@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
-
+import * as React from "react";
+import { GroupList } from "@/components/index";
 
 const Page = () => {
   return (
-    <div className="w-full h-full flex flex-col gap-4">
- 
-    </div>
+    <main className="w-full h-full flex gap-2">
+      <GroupList />
+    </main>
   );
 };
 

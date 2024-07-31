@@ -6,4 +6,5 @@ export { default as Sidebar } from "./Sidebar";
 export { default as Layout } from "./Layout";
 export { default as Header } from "./Header";
 export { default as ToggleTheme } from "./ToggleTheme";
+export { default as GroupList } from "./GroupList";
 export * from "./ui/index";
