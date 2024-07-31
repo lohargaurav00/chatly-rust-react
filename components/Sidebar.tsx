@@ -1,56 +1,124 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import {
+  MdNightsStay,
+  MdSettings,
+  MdWbSunny,
+} from "react-icons/md";
+
+import { sidebarConfig } from "@/configs";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
   Box,
   Button,
-  Separator,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "./index";
-import { sidebarConfig } from "@/configs";
 
-interface SidebarProps {}
+const Sidebar: React.FC = () => {
+  const { setTheme } = useTheme();
+  const router = useRouter();
 
-const Sidebar: React.FC<SidebarProps> = ({}) => {
   return (
-    <Box className="w-fit rounded-none h-full flex flex-col gap-6 shadow-md">
-      <Avatar className="cursor-pointer hover:scale-105 duration-200 transition">
-        <AvatarImage src="https://github.com/shadcn.png" />
-        <AvatarFallback>CN</AvatarFallback>
-      </Avatar>
-      <Separator />
-      <div className="flex flex-col gap-3 ">
-        {sidebarConfig.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <React.Fragment key={item.name}>
-              <TooltipProvider >
-                <Tooltip delayDuration={400}>
-                  <TooltipTrigger asChild >
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => item.action()}
-                    >
-                      <Icon size={20} color="var(--secondary-foreground)"/>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p className="text-xs text-muted-foreground">{item.name}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {sidebarConfig.length - 1 > index && <Separator />}
-            </React.Fragment>
-          );
-        })}
+    <Box className="w-fit rounded-none h-full flex flex-col justify-between items-center gap-6 shadow-md py-4">
+      <div className="flex flex-col items-center gap-6">
+        <Avatar className="cursor-pointer hover:scale-105 duration-200 transition">
+          <AvatarImage src="https://github.com/shadcn.png" />
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col gap-4 ">
+          {sidebarConfig.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <React.Fragment key={item.name}>
+                <TooltipProvider>
+                  <Tooltip delayDuration={400}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => {
+                          if (item.path) {
+                            router.push(item.path);
+                            return;
+                          }
+                          item.action();
+                        }}
+                      >
+                        <Icon
+                          size={20}
+                          className="text-primary transition-colors"
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p className="text-xs text-muted-foreground">
+                        {item.name}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+      <div className="flex flex-col gap-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MdWbSunny
+                size={20}
+                className="rotate-0 text-primary scale-100 duration-300 transition-transform dark:-rotate-90 dark:scale-0"
+              />
+              <MdNightsStay
+                size={20}
+                className="absolute text-primary rotate-90 scale-0  duration-300 transition-transform dark:rotate-0 dark:scale-100"
+              />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => setTheme("light")}>
+              Light
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("dark")}>
+              Dark
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("system")}>
+              System
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <TooltipProvider>
+          <Tooltip delayDuration={400}>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {}}
+              >
+                <MdSettings size={24} className="text-primary" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p className="text-xs text-muted-foreground">Settings</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </Box>
   );

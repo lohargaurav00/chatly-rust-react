@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 
 import { SocketProvider, ThemeProvider } from "@/providers";
 import "./globals.css";
+import { Layout } from "@/components/index";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +27,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SocketProvider>
-            {children}
+            <Layout>{children}</Layout>
           </SocketProvider>
         </ThemeProvider>
       </body>
