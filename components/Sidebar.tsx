@@ -29,7 +29,7 @@ const Sidebar: React.FC = () => {
           <AvatarImage src="https://github.com/shadcn.png" />
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
-        <div className="flex flex-col gap-4 ">
+        <div className="flex flex-col gap-4 w-full ">
           {sidebarConfig.map((item) => {
             const Icon = item.icon;
             return (

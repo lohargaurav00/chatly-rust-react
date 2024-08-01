@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { GroupList } from "@/components/index";
+import { ChatContainer, GroupList } from "@/components/index";
 
-const Page = () => {
+const Page = () => {'' 
   return (
-    <main className="w-full h-full flex gap-2">
+    <main className="w-full h-full flex">
       <GroupList />
+      <ChatContainer />
     </main>
   );
 };
