@@ -52,7 +52,7 @@ const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
             <div
               className={cn(
                 "rounded-lg whitespace-pre-line text-sm max-w-[75%] px-3 py-2",
-                isUserSender ? "bg-primary text-primary-foreground" : "bg-muted"
+                isUserSender ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted rounded-tl-none"
               )}
             >
               {message}
