@@ -10,5 +10,6 @@ export { default as GroupList } from "./GroupList";
 export { default as GroupItem } from "./GroupItem";
 export { default as NoData } from "./NoData";
 export { default as ChatHeader } from "./ChatHeader";
-export { default as ChatContainer } from "./ChatContainer";
+export { default as ChatWindow } from "./ChatWindow";
+export { default as MessageInput } from "./MessageInput";
 export * from "./ui/index";

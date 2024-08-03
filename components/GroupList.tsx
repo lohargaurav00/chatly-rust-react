@@ -17,8 +17,8 @@ interface GroupItemsListProps {
 }
 
 const GroupItemsList: React.FC<GroupItemsListProps> = ({ groups, onClick }) => {
-  if(groups && groups.length <= 0) {
-    return <NoData message="Join Group's To Chat"/>
+  if (groups && groups.length <= 0) {
+    return <NoData message="Join Group's To Chat" />;
   }
   return (
     <div className="flex flex-col h-full gap-2 overflow-y-auto">
@@ -36,10 +36,13 @@ const GroupItemsList: React.FC<GroupItemsListProps> = ({ groups, onClick }) => {
   );
 };
 
-const GroupList = () => {
+interface GroupListProps {
+  groups: GroupT[];
+  onGroupClick: (group: GroupT) => void;
+}
+
+const GroupList: React.FC<GroupListProps> = ({ groups, onGroupClick }) => {
   const [search, setSearch] = React.useState("");
-  const [groups, setGroups] = React.useState<GroupT[]>([]);
-  const [activeGroup, setActiveGroup] = React.useState<GroupT | null>(null);
 
   const filGroups = search
     ? groups.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()))
@@ -65,7 +68,7 @@ const GroupList = () => {
         <GroupItemsList
           groups={filGroups}
           onClick={(group) => {
-            setActiveGroup(group);
+            onGroupClick(group);
           }}
         />
       </Box>

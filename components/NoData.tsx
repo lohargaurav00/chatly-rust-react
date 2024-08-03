@@ -12,8 +12,8 @@ const NoData: React.FC<NoDataProps> = ({ message, description }) => {
       <Image
         src="/assets/images/no_data.png"
         alt="No Data"
-        width={300}
-        height={300}
+        width={240}
+        height={240}
         className="max-w-full max-h-full"
       />
       <h2 className="text-lg font-medium">{message}</h2>
