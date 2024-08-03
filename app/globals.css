@@ -62,6 +62,27 @@
 @layer base {
   * {
     @apply border-border;
+
+    /* Chrome, Edge, and Safari */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: hsl(var(--background));
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: hsl(var(--primary));
+      border-radius: 14px;
+      border: 1px solid hsl(var(--background));
+    }
+
+    /* Firefox */
+    /* scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) hsl(var(--background)); */
   }
   body {
     @apply bg-background text-foreground;

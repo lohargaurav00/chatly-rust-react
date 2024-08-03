@@ -49,15 +49,15 @@ const GroupList: React.FC<GroupListProps> = ({ groups, onGroupClick }) => {
     : groups;
 
   return (
-    <div className="flex flex-col h-full w-full md:max-w-[300px] lg:max-w-[400px] border-r">
-      <Box className="hidden md:inline-flex  gap-4 w-full rounded-none items-center border-b shadow-md">
+    <div className="flex flex-col h-full w-full md:max-w-[300px] gap-2 lg:max-w-[400px] border-r">
+      <Box className="hidden md:inline-flex gap-4 w-full rounded-none items-center border-b shadow-md">
         <h2 className="text-lg">Groups</h2>
         <Avatar className="cursor-pointer hover:scale-105 duration-200 transition invisible">
           <AvatarImage src="https://github.com/shadcn.png" />
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
       </Box>
-      <Box className="flex flex-col gap-2 h-full rounded-none">
+      <Box className="flex flex-col gap-2 h-full rounded-none pt-0">
         <Input
           placeholder="Search"
           value={search}
