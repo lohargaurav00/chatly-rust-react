@@ -1,7 +1,10 @@
+"/configs/auth.ts";
+
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import prisma from "@/lib/prisma";
 import { User } from "next-auth";
+
+import prisma from "@/lib/prisma";
 
 export const authConfig = {
   providers: [
@@ -40,7 +43,6 @@ export const authConfig = {
                 password: hashedPass,
               },
             });
-            console.log("newUser", newUser);
             return newUser as User;
           }
 
@@ -51,7 +53,6 @@ export const authConfig = {
           const user = await prisma.users.findFirst({
             where: { email },
           });
-          console.log("user", user);
 
           if (!user) {
             throw new Error(`No user found with associated email: ${email}`);
