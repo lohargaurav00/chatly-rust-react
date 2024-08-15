@@ -14,4 +14,6 @@ model users {
   user_name     String  @unique(map: "users_user_name_idx") @db.VarChar(100)
   profile_photo String? @db.VarChar(255)
   password      String  @db.VarChar(255)
+  created_at    BigInt  @default(dbgenerated("EXTRACT(epoch FROM now())"))
+  updated_at    BigInt?
 }
