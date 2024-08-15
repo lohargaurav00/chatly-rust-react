@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { MdSettings } from "react-icons/md";
+import { BsThreeDotsVertical } from "react-icons/bs";
 
-import { sidebarConfig } from "@/configs";
+import { menuOptionConfig, sidebarConfig } from "@/configs";
 import { IconSize } from "@/utils";
 import {
   Avatar,
@@ -12,12 +12,56 @@ import {
   AvatarImage,
   Box,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   ToggleTheme,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "./index";
+
+const MoreMenu = () => {
+  return (
+    <DropdownMenu>
+      <TooltipProvider>
+        <Tooltip delayDuration={400}>
+          <DropdownMenuTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {}}
+              >
+                <BsThreeDotsVertical size={IconSize} className="text-primary" />
+              </Button>
+            </TooltipTrigger>
+          </DropdownMenuTrigger>
+          <TooltipContent side="right">
+            <p className="text-xs text-muted-foreground">More</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <DropdownMenuContent align="end" side="left">
+        {menuOptionConfig.map((menu) => {
+          const Icon = menu.icon;
+          return (
+            <DropdownMenuItem key={menu.name} onClick={() => menu.action()}>
+              <Icon
+                size={IconSize}
+                className="text-primary transition-colors mr-3"
+              />
+              {menu.name}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 const Sidebar: React.FC = () => {
   const router = useRouter();
@@ -69,23 +113,7 @@ const Sidebar: React.FC = () => {
       </div>
       <div className="flex flex-col gap-4">
         <ToggleTheme />
-        <TooltipProvider>
-          <Tooltip delayDuration={400}>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="w-full"
-                onClick={() => {}}
-              >
-                <MdSettings size={IconSize} className="text-primary" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p className="text-xs text-muted-foreground">Settings</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <MoreMenu />
       </div>
     </Box>
   );

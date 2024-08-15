@@ -13,3 +13,4 @@ export * from "./toaster";
 export * from "./avatar";
 export * from "./separator";
 export * from "./tooltip";
+export * from "./use-toast";

@@ -2,7 +2,11 @@
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { signIn } from "next-auth/react";
 import { z } from "zod";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 
 import {
   Button,
@@ -14,8 +18,8 @@ import {
   FormItem,
   FormMessage,
   Input,
+  useToast,
 } from "@/components/index";
-import Link from "next/link";
 
 const FormSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -35,6 +39,8 @@ const FormSchema = z.object({
 });
 
 const page = () => {
+  const router = useRouter();
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -43,8 +49,37 @@ const page = () => {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof FormSchema>) => {
-    console.log(data);
+  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        ...data,
+        callbackUrl: "/login",
+      });
+
+      if (!res) return;
+
+      if (res.ok) {
+        toast({
+          title: "Success",
+          description: "Logged in successfully."
+        });
+        router.push("/");
+      }
+
+      if (res.error) {
+        toast({
+          title: "Error",
+          description: res.error,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        
+      });
+    }
   };
 
   return (

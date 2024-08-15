@@ -8,7 +8,7 @@ import { Box } from "@/components/index";
 const loading = () => {
   return (
     <Box className="h-full flex items-center justify-center">
-      <ScaleLoader color="var(--primary-foreground)" />
+      <ScaleLoader className="text-white" />
     </Box>
   );
 };

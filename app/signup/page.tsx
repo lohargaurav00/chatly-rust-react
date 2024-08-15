@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   Button,
@@ -15,8 +17,8 @@ import {
   FormItem,
   FormMessage,
   Input,
+  useToast,
 } from "@/components/index";
-import Link from "next/link";
 
 const FormSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
@@ -38,6 +40,8 @@ const FormSchema = z.object({
 });
 
 const page = () => {
+  const router = useRouter();
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -49,7 +53,34 @@ const page = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-    await signIn("credentials", { ...data, callbackUrl: "/signup" });
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        ...data,
+        isSignUp: true,
+        callbackUrl: "/signup",
+      });
+      if (!res) return;
+      if (res.error) {
+        toast({
+          title: "Error",
+          description: res.error,
+        });
+      }
+
+      if (res.ok) {
+        toast({
+          title: "Success",
+          description: "Account created successfully",
+        });
+        router.push("/");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+      });
+    }
   };
 
   return (
