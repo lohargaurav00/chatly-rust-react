@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import { SocketProvider, ThemeProvider } from "@/providers";
+import { NextAuthProvider, SocketProvider, ThemeProvider } from "@/providers";
 import "./globals.css";
 import { Layout } from "@/components/index";
 
@@ -26,9 +26,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SocketProvider>
-            <Layout>{children}</Layout>
-          </SocketProvider>
+          <NextAuthProvider>
+            <SocketProvider>
+              <Layout>{children}</Layout>
+            </SocketProvider>
+          </NextAuthProvider>
         </ThemeProvider>
       </body>
     </html>

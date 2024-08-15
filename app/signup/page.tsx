@@ -3,11 +3,11 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { signIn } from "next-auth/react";
 
 import {
   Button,
   Card,
-  CardFooter,
   CardHeader,
   Form,
   FormControl,
@@ -48,8 +48,8 @@ const page = () => {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof FormSchema>) => {
-    console.log(data);
+  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+    await signIn("credentials", { ...data, callbackUrl: "/signup" });
   };
 
   return (
