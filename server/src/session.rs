@@ -3,6 +3,7 @@ use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use sqlx::PgPool;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -15,6 +16,7 @@ pub struct MyWs {
     pub id: Uuid,
     pub hb: Instant,
     pub addr: Addr<server::ChatServer>,
+    pub db_pool: PgPool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
