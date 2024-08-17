@@ -4,10 +4,11 @@ use crate::{
 };
 use actix_web::{get, http::StatusCode, web, HttpResponse};
 use sqlx::PgPool;
+use uuid::Uuid;
 
 #[get("/users")]
 pub async fn get_users(db_pool: web::Data<PgPool>) -> HttpResponse {
-    let users_result = sqlx::query_as::<_, User>(r#"SELECT * FROM users"#)
+    let users_result = sqlx::query_as::<_, User>("SELECT * FROM users")
         .fetch_all(db_pool.get_ref())
         .await;
 
@@ -27,8 +28,8 @@ pub async fn get_users(db_pool: web::Data<PgPool>) -> HttpResponse {
     }
 }
 
-#[get("/users/{id}")]
-pub async fn get_user_by_id(db_pool: web::Data<PgPool>, id: web::Path<i32>) -> HttpResponse {
+#[get("/user/{id}")]
+pub async fn get_user_by_id(db_pool: web::Data<PgPool>, id: web::Path<Uuid>) -> HttpResponse {
     let user_result = sqlx::query_as::<_, User>(r#"SELECT * FROM users WHERE id = $1"#)
         .bind(id.into_inner())
         .fetch_one(db_pool.get_ref())
@@ -49,7 +50,6 @@ pub async fn get_user_by_id(db_pool: web::Data<PgPool>, id: web::Path<i32>) -> H
         ),
     }
 }
-
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(get_users);

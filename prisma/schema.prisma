@@ -10,8 +10,8 @@ datasource db {
 model users {
   id            String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   name          String  @db.VarChar(100)
-  email         String  @unique(map: "users_email_idx") @db.VarChar(100)
-  user_name     String  @unique(map: "users_user_name_idx") @db.VarChar(100)
+  email         String  @unique @db.VarChar(100)
+  user_name     String  @unique @db.VarChar(100)
   profile_photo String? @db.VarChar(255)
   password      String  @db.VarChar(255)
   created_at    BigInt  @default(dbgenerated("EXTRACT(epoch FROM now())"))
