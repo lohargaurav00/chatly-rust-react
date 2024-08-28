@@ -43,11 +43,9 @@ pub async fn create_room(db_pool: web::Data<PgPool>, room: web::Json<NewRoom>) -
 }
 
 #[get("rooms")]
-pub async fn get_rooms(db_pool: web::Data<PgPool>) -> HttpResponse {
-    let rooms_result = sqlx::query_as::<_, Room>("SELECT * FROM rooms")
-        .fetch_all(db_pool.get_ref())
-        .await;
+pub async fn route_get_rooms(db_pool: web::Data<PgPool>) -> HttpResponse {
 
+ let rooms_result = get_rooms(db_pool.get_ref()).await;
     match rooms_result {
         Ok(rooms) => handle_response(
             StatusCode::OK,
@@ -62,6 +60,14 @@ pub async fn get_rooms(db_pool: web::Data<PgPool>) -> HttpResponse {
             Some(()),
         ),
     }
+}
+
+pub async fn get_rooms(db_pool: &PgPool) -> Result<Vec<Room>, sqlx::Error> {
+    let rooms_result = sqlx::query_as::<_, Room>("SELECT * FROM rooms")
+        .fetch_all(db_pool)
+        .await;
+
+    rooms_result
 }
 
 #[get("room/{id}")]
@@ -190,7 +196,7 @@ GROUP BY r.id;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(create_room);
-    cfg.service(get_rooms);
+    cfg.service(route_get_rooms);
     cfg.service(get_room_by_id);
     cfg.service(join_room);
     cfg.service(get_room_with_members);

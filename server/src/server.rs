@@ -1,10 +1,13 @@
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sqlx::PgPool;
 use std::fmt::Display;
 use uuid::Uuid;
 
 use std::collections::{HashMap, HashSet};
+
+use crate::api::handlers::rooms::get_rooms;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -14,6 +17,7 @@ pub struct Message(pub String);
 #[rtype(result = "String")]
 pub struct Connect {
     pub addr: Recipient<Message>,
+    pub db_pool: PgPool,
 }
 
 #[derive(Message)]
@@ -93,10 +97,12 @@ impl Actor for ChatServer {
 }
 
 impl Handler<Connect> for ChatServer {
-    type Result = String;
+    type Result = ResponseFuture<String>;
 
     fn handle(&mut self, msg: Connect, _: &mut Self::Context) -> Self::Result {
         let id = Uuid::new_v4();
+        let db_pool = msg.db_pool.clone();
+
         self.sessions.insert(id, msg.addr.clone());
         self.rooms
             .entry("main".to_string())
@@ -124,7 +130,20 @@ impl Handler<Connect> for ChatServer {
             .to_string(),
             None,
         );
-        id.to_string()
+        
+        let future = async move {
+            let rooms = match get_rooms(&db_pool).await {
+                Ok(rooms) => rooms,
+                Err(e) => {
+                    println!("Failed to fetch rooms: {:?}", e);
+                    vec![]
+                }
+            };
+            println!("rooms : {:?}", rooms);
+            id.to_string()
+        };
+
+        Box::pin(future)
     }
 }
 

@@ -51,6 +51,7 @@ impl Actor for MyWs {
         self.addr
             .send(server::Connect {
                 addr: addr.recipient(),
+                db_pool: self.db_pool.clone(),
             })
             .into_actor(self)
             .then(|res, act, ctx| {
