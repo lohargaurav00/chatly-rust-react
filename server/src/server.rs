@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use std::collections::{HashMap, HashSet};
 
-use crate::api::handlers::rooms::get_rooms;
+use crate::api::handlers::rooms::get_rooms_with_members_ids;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -25,7 +25,7 @@ pub struct Connect {
 pub struct ClientMessage {
     pub id: Uuid,
     pub msg: String,
-    pub room: String,
+    pub room: i32,
 }
 
 #[derive(Message)]
@@ -37,8 +37,7 @@ pub struct Disconnect {
 #[derive(Message, Debug, Default, Deserialize, Serialize)]
 #[rtype(result = "()")]
 pub struct CreateRoom {
-    pub id: Option<Uuid>,
-    pub room_id: String,
+    pub id: Uuid,
     pub name: String,
 }
 
@@ -46,14 +45,14 @@ pub struct CreateRoom {
 #[rtype(result = "()")]
 pub struct JoinRoom {
     pub id: Uuid,
-    pub room_id: String,
+    pub room_id: i32,
 }
 
 #[derive(Debug)]
 pub struct ChatServer {
     sessions: HashMap<Uuid, Recipient<Message>>,
-    sessions_rooms: HashMap<String, CreateRoom>,
-    rooms: HashMap<String, HashSet<Uuid>>,
+    // sessions_rooms: HashMap<String, CreateRoom>,
+    rooms: HashMap<i32, HashSet<Uuid>>,
 }
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Error {
@@ -72,12 +71,12 @@ impl ChatServer {
     pub fn new() -> Self {
         ChatServer {
             sessions: HashMap::new(),
-            sessions_rooms: HashMap::new(),
+            // sessions_rooms: HashMap::new(),
             rooms: HashMap::new(),
         }
     }
 
-    fn send_message(&self, room: &str, msg: &str, skip_id: Option<Uuid>) {
+    fn send_message(&self, room: &i32, msg: &str, skip_id: Option<Uuid>) {
         if let Some(members) = self.rooms.get(room) {
             members.iter().for_each(|id| {
                 if Some(*id) != skip_id {
@@ -104,46 +103,44 @@ impl Handler<Connect> for ChatServer {
         let db_pool = msg.db_pool.clone();
 
         self.sessions.insert(id, msg.addr.clone());
-        self.rooms
-            .entry("main".to_string())
-            .or_insert_with(HashSet::new)
-            .insert(id);
-        self.sessions_rooms.insert(
-            "main".to_string(),
-            CreateRoom {
-                id: Some(Uuid::new_v4()),
-                room_id: "main".to_string(),
-                name: "main".to_string(),
-            },
-        );
-        println!(
-            "sessions: {:?}, rooms : {:?}, session_rooms: {:?} ",
-            self.sessions, self.rooms, self.sessions_rooms
-        );
-        self.send_message(
-            "main",
-            &json!({
-                "id": id,
-                "chat_type": "message",
-                "message": "Welcome to Main Room!"
-            })
-            .to_string(),
-            None,
-        );
-        
-        let future = async move {
-            let rooms = match get_rooms(&db_pool).await {
+        // self.rooms.entry(0).or_insert_with(HashSet::new).insert(id);
+        // self.sessions_rooms.insert(
+        //     "main".to_string(),
+        //     CreateRoom {
+        //         id: Some(Uuid::new_v4()),
+        //         room_id: "main".to_string(),
+        //         name: "main".to_string(),
+        //     },
+        // );
+        // println!("sessions: {:?}, rooms : {:?}", self.sessions, self.rooms);
+        // self.send_message(
+        //     &0,
+        //     &json!({
+        //         "id": id,
+        //         "chat_type": "message",
+        //         "message": "Welcome to Main Room!"
+        //     })
+        //     .to_string(),
+        //     None,
+        // );
+
+        Box::pin(async move {
+            let rooms = match get_rooms_with_members_ids(&db_pool).await {
                 Ok(rooms) => rooms,
                 Err(e) => {
                     println!("Failed to fetch rooms: {:?}", e);
                     vec![]
                 }
             };
-            println!("rooms : {:?}", rooms);
-            id.to_string()
-        };
+            // rooms.iter().for_each(|room| {
+            //     let entry = self.rooms.entry(room.id).or_insert_with(HashSet::new);
+            //     room.members.iter().for_each(|id| {
+            //         entry.insert(*id);
+            //     });
+            // });
 
-        Box::pin(future)
+            id.to_string()
+        })
     }
 }
 
@@ -158,11 +155,9 @@ impl Handler<Disconnect> for ChatServer {
 impl Handler<ClientMessage> for ChatServer {
     type Result = ();
     fn handle(&mut self, msg: ClientMessage, _: &mut Self::Context) -> Self::Result {
-        let mut room_id = msg.room.to_string();
-        if msg.room.is_empty() {
-            room_id = "main".to_string();
-        }
-        if let Some(_) = self.sessions_rooms.get(&room_id) {
+        let room_id = msg.room;
+
+        if let Some(_) = self.rooms.get(&room_id) {
             self.send_message(&room_id, &msg.msg, None)
         }
     }
@@ -172,17 +167,19 @@ impl Handler<CreateRoom> for ChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: CreateRoom, _: &mut Self::Context) -> Self::Result {
-        if let Some(msg_id) = msg.id {
-            self.rooms
-                .entry(msg.room_id.clone())
-                .or_insert_with(HashSet::new)
-                .insert(msg_id);
-            self.sessions_rooms.insert(msg.room_id.to_string(), msg);
-            println!(
-                "sessions: {:?}, rooms : {:?}, session_rooms: {:?} ",
-                self.sessions, self.rooms, self.sessions_rooms
-            );
-        }
+        // TODO: create room to database and get the room id
+        // TODO: add the room to the rooms hashmap
+
+        // self.rooms
+        //     .entry(msg.room_id.clone())
+        //     .or_insert_with(HashSet::new)
+        //     .insert(msg_id);
+
+        // self.sessions_rooms.insert(msg.room_id.to_string(), msg);
+        // println!(
+        //     "sessions: {:?}, rooms : {:?}, session_rooms: {:?} ",
+        //     self.sessions, self.rooms, self.sessions_rooms
+        // );
     }
 }
 
@@ -190,13 +187,10 @@ impl Handler<JoinRoom> for ChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: JoinRoom, _: &mut Self::Context) -> Self::Result {
-        if let Some(room) = self.sessions_rooms.get(&msg.room_id.to_string()) {
-            if let Some(room_members) = self.rooms.get_mut(&room.room_id) {
-                room_members.insert(msg.id);
-            }
-
+        let is_room_exist = self.rooms.contains_key(&msg.room_id);
+        if is_room_exist {
             self.send_message(
-                &msg.room_id.to_string(),
+                &msg.room_id,
                 &json!({
                     "id": msg.id,
                     "chat_type": "message",
@@ -205,6 +199,10 @@ impl Handler<JoinRoom> for ChatServer {
                 .to_string(),
                 None,
             );
+
+            if let Some(room_members) = self.rooms.get_mut(&msg.room_id) {
+                room_members.insert(msg.id);
+            }
         } else {
             if let Some(addr) = self.sessions.get(&msg.id) {
                 addr.do_send(Message(

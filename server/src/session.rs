@@ -38,7 +38,7 @@ struct ChatMessage {
     id: Option<Uuid>,
     chat_type: String,
     message: String,
-    room_id: String,
+    room_id: i32,
 }
 
 impl Actor for MyWs {
@@ -127,8 +127,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
                         }
                         let inp_msg = inp.as_ref().unwrap();
                         self.addr.do_send(server::CreateRoom {
-                            id: Some(self.id),
-                            room_id: inp_msg.room_id.clone(),
+                            id: self.id,
                             name: inp_msg.name.clone(),
                         });
                         return;

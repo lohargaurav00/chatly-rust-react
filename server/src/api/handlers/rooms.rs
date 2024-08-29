@@ -2,7 +2,7 @@ use actix_web::{get, http::StatusCode, post, web, HttpResponse};
 use sqlx::PgPool;
 
 use crate::{
-    models::{JoinRoom, NewRoom, Room, RoomWithMembers},
+    models::{JoinRoom, NewRoom, Room, RoomWithMembers, RoomWithMembersIds},
     utils::helpers::{handle_response, Status},
 };
 
@@ -44,8 +44,7 @@ pub async fn create_room(db_pool: web::Data<PgPool>, room: web::Json<NewRoom>) -
 
 #[get("rooms")]
 pub async fn route_get_rooms(db_pool: web::Data<PgPool>) -> HttpResponse {
-
- let rooms_result = get_rooms(db_pool.get_ref()).await;
+    let rooms_result = get_rooms(db_pool.get_ref()).await;
     match rooms_result {
         Ok(rooms) => handle_response(
             StatusCode::OK,
@@ -194,10 +193,52 @@ GROUP BY r.id;
     }
 }
 
+pub async fn get_rooms_with_members_ids(
+    db_pool: &PgPool,
+) -> Result<Vec<RoomWithMembersIds>, sqlx::Error> {
+    let rooms_result = sqlx::query_as::<_, RoomWithMembersIds>(
+        r#"
+        SELECT 
+r.*,
+COALESCE(
+	array_agg(u.id),
+	'{}'
+) AS members
+FROM rooms r
+LEFT JOIN room_users ru ON ru.room_id = r.id
+LEFT JOIN users u ON u.id = ru.user_id
+GROUP BY r.id;
+"#,
+    )
+    .fetch_all(db_pool)
+    .await;
+
+    rooms_result
+}
+
+#[get("/rooms-with-members-ids")]
+pub async fn route_get_rooms_with_members_id(db_pool: web::Data<PgPool>) -> HttpResponse {
+    let rooms_result = get_rooms_with_members_ids(db_pool.get_ref()).await;
+    match rooms_result {
+        Ok(rooms) => handle_response(
+            StatusCode::OK,
+            Status::Ok,
+            "Room fetched successfully",
+            Some(rooms),
+        ),
+        Err(e) => handle_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Status::Error,
+            &format!("Failed to fetch room: {:?}", e),
+            Some(()),
+        ),
+    }
+}
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(create_room);
     cfg.service(route_get_rooms);
     cfg.service(get_room_by_id);
     cfg.service(join_room);
     cfg.service(get_room_with_members);
+    cfg.service(route_get_rooms_with_members_id);
 }
