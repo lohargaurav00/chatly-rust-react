@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "./scripts/dev.sh",
     "frontend": "next dev",
-    "backend": "cd ./server && cargo run",
+    "backend": "cd ./server && cargo watch -x run",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

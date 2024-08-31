@@ -15,13 +15,16 @@ pub async fn greet() -> impl Responder {
 pub async fn ws_handler(
     srv: web::Data<Addr<server::ChatServer>>,
     req: HttpRequest,
+    user_id: web::Path<Uuid>,
     stream: web::Payload,
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     println!("starting socket...");
+    println!("user_id: {:?}", user_id);
+
     let resp = ws::start(
         session::MyWs {
-            id: Uuid::new_v4(),
+            id: *user_id,
             hb: Instant::now(),
             addr: srv.get_ref().clone(),
             db_pool: db_pool.get_ref().clone(),

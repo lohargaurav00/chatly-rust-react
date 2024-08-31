@@ -45,7 +45,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(cors)
             .service(greet)
-            .route("/ws", web::get().to(ws_handler))
+            .route("/ws/{user_id}", web::get().to(ws_handler))
             .configure(api::init_routes)
     })
     .bind(("127.0.0.1", 8000))?

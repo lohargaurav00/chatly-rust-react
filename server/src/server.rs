@@ -1,11 +1,11 @@
 use actix::prelude::*;
+use futures::executor;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::PgPool;
-use std::fmt::Display;
 use uuid::Uuid;
 
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, fmt::Display};
 
 use crate::api::handlers::rooms::get_rooms_with_members_ids;
 
@@ -16,6 +16,7 @@ pub struct Message(pub String);
 #[derive(Message)]
 #[rtype(result = "String")]
 pub struct Connect {
+    pub id : Uuid,
     pub addr: Recipient<Message>,
     pub db_pool: PgPool,
 }
@@ -96,10 +97,10 @@ impl Actor for ChatServer {
 }
 
 impl Handler<Connect> for ChatServer {
-    type Result = ResponseFuture<String>;
+    type Result = String;
 
     fn handle(&mut self, msg: Connect, _: &mut Self::Context) -> Self::Result {
-        let id = Uuid::new_v4();
+        let id = msg.id ;
         let db_pool = msg.db_pool.clone();
 
         self.sessions.insert(id, msg.addr.clone());
@@ -124,23 +125,25 @@ impl Handler<Connect> for ChatServer {
         //     None,
         // );
 
-        Box::pin(async move {
-            let rooms = match get_rooms_with_members_ids(&db_pool).await {
-                Ok(rooms) => rooms,
-                Err(e) => {
-                    println!("Failed to fetch rooms: {:?}", e);
-                    vec![]
-                }
-            };
-            // rooms.iter().for_each(|room| {
-            //     let entry = self.rooms.entry(room.id).or_insert_with(HashSet::new);
-            //     room.members.iter().for_each(|id| {
-            //         entry.insert(*id);
-            //     });
-            // });
+        let rooms_result = executor::block_on(get_rooms_with_members_ids(&db_pool));
 
-            id.to_string()
-        })
+        let rooms = match rooms_result {
+            Ok(rooms) => rooms,
+            Err(e) => {
+                println!("Failed to fetch rooms: {:?}", e);
+                vec![]
+            }
+        };
+
+        for room in rooms.iter() {
+            let entry = self.rooms.entry(room.id).or_insert_with(HashSet::new);
+            room.members.iter().for_each(|id| {
+                entry.insert(*id);
+            });
+        }
+
+        println!("sessions: {:?}, rooms : {:?}", self.sessions, self.rooms);
+        id.to_string()
     }
 }
 

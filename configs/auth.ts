@@ -2,9 +2,17 @@
 
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { User } from "next-auth";
+import { DefaultSession, Session, TokenSet, User } from "next-auth";
 
 import prisma from "@/lib/prisma";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string | unknown;
+    } & DefaultSession["user"];
+  }
+}
 
 export const authConfig = {
   providers: [
@@ -65,6 +73,7 @@ export const authConfig = {
           }
 
           if (user && isPasswordMatch) {
+            console.log(user);
             return user as User;
           }
 
@@ -76,6 +85,15 @@ export const authConfig = {
       },
     }),
   ],
+  callbacks: {
+    async session({ session, token }: { session: Session; token: TokenSet }) {
+      if (session?.user && token) {
+        session.user.id = token.sub;
+      }
+
+      return session;
+    },
+  },
   pages: {
     signIn: "/signup",
   },
