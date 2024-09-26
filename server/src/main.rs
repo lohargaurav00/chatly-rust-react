@@ -35,6 +35,7 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+
     let server = server::ChatServer::new().start();
 
     HttpServer::new(move || {

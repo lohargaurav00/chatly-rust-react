@@ -7,26 +7,16 @@ use crate::{
 };
 
 #[post("create-room")]
-pub async fn create_room(db_pool: web::Data<PgPool>, room: web::Json<NewRoom>) -> HttpResponse {
+pub async fn route_create_room(db_pool: web::Data<PgPool>, room: web::Json<NewRoom>) -> HttpResponse {
+    
     let room = NewRoom {
         name: room.name.clone(),
-        created_by: room.created_by,
+        created_by: room.created_by.clone()        
     };
 
-    let result = sqlx::query_as!(
-        Room,
-        r#"
-        INSERT INTO rooms (name, created_by)
-        VALUES ($1, $2)
-        RETURNING id, name, last_message, created_by, created_at, updated_at
-        "#,
-        room.name,
-        room.created_by,
-    )
-    .fetch_one(db_pool.get_ref())
-    .await;
+    let result = create_room(&db_pool, room ).await;
 
-    match result {
+       match result {
         Ok(room) => handle_response(
             StatusCode::CREATED,
             Status::Ok,
@@ -40,6 +30,23 @@ pub async fn create_room(db_pool: web::Data<PgPool>, room: web::Json<NewRoom>) -
             Some(()),
         ),
     }
+}
+
+pub async fn create_room (db_pool : &PgPool , room : NewRoom ) -> Result<Room , sqlx::Error> {
+    let result = sqlx::query_as!(
+        Room,
+        r#"
+        INSERT INTO rooms (name, created_by)
+        VALUES ($1, $2)
+        RETURNING id, name, last_message, created_by, created_at, updated_at
+        "#,
+        room.name,
+        room.created_by,
+    )
+    .fetch_one(db_pool)
+    .await;
+
+    result
 }
 
 #[get("rooms")]
@@ -234,8 +241,9 @@ pub async fn route_get_rooms_with_members_id(db_pool: web::Data<PgPool>) -> Http
         ),
     }
 }
+
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_room);
+    cfg.service(route_create_room);
     cfg.service(route_get_rooms);
     cfg.service(get_room_by_id);
     cfg.service(join_room);

@@ -1,13 +1,20 @@
 use actix::prelude::*;
 use futures::executor;
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use std::{collections::{HashMap, HashSet}, fmt::Display};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+};
 
-use crate::api::handlers::rooms::get_rooms_with_members_ids;
+use crate::{
+    api::handlers::rooms::{create_room, get_rooms_with_members_ids},
+    models::NewRoom,
+};
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -16,7 +23,7 @@ pub struct Message(pub String);
 #[derive(Message)]
 #[rtype(result = "String")]
 pub struct Connect {
-    pub id : Uuid,
+    pub id: Uuid,
     pub addr: Recipient<Message>,
     pub db_pool: PgPool,
 }
@@ -49,12 +56,21 @@ pub struct JoinRoom {
     pub room_id: i32,
 }
 
+#[derive(Message, Deserialize, Serialize, Debug)]
+#[rtype(result = "()")]
+pub struct AddRoom {
+    pub id: Uuid,
+    pub room_id: i32,
+}
+
 #[derive(Debug)]
 pub struct ChatServer {
     sessions: HashMap<Uuid, Recipient<Message>>,
     // sessions_rooms: HashMap<String, CreateRoom>,
     rooms: HashMap<i32, HashSet<Uuid>>,
+    db_pool: Option<PgPool>,
 }
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Error {
     pub id: Uuid,
@@ -74,6 +90,7 @@ impl ChatServer {
             sessions: HashMap::new(),
             // sessions_rooms: HashMap::new(),
             rooms: HashMap::new(),
+            db_pool: None,
         }
     }
 
@@ -96,24 +113,24 @@ impl Actor for ChatServer {
     type Context = Context<Self>;
 }
 
+impl Handler<AddRoom> for ChatServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: AddRoom, _: &mut Self::Context) -> Self::Result {
+        self.rooms.entry(msg.room_id).or_default().insert(msg.id);
+        info!("new room: {:?}", self.rooms );
+    }
+}
+
 impl Handler<Connect> for ChatServer {
     type Result = String;
 
     fn handle(&mut self, msg: Connect, _: &mut Self::Context) -> Self::Result {
-        let id = msg.id ;
+        let id = msg.id;
         let db_pool = msg.db_pool.clone();
-
+        self.db_pool = Some(msg.db_pool.clone());
         self.sessions.insert(id, msg.addr.clone());
-        // self.rooms.entry(0).or_insert_with(HashSet::new).insert(id);
-        // self.sessions_rooms.insert(
-        //     "main".to_string(),
-        //     CreateRoom {
-        //         id: Some(Uuid::new_v4()),
-        //         room_id: "main".to_string(),
-        //         name: "main".to_string(),
-        //     },
-        // );
-        // println!("sessions: {:?}, rooms : {:?}", self.sessions, self.rooms);
+
         // self.send_message(
         //     &0,
         //     &json!({
@@ -169,21 +186,65 @@ impl Handler<ClientMessage> for ChatServer {
 impl Handler<CreateRoom> for ChatServer {
     type Result = ();
 
-    fn handle(&mut self, msg: CreateRoom, _: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: CreateRoom, ctx: &mut Self::Context) -> Self::Result {
         // TODO: create room to database and get the room id
-        // TODO: add the room to the rooms hashmap
+        let db_pool = self.db_pool.clone();
+        let room_name = msg.name.clone();
+        let user_id = msg.id.clone();
 
-        // self.rooms
-        //     .entry(msg.room_id.clone())
-        //     .or_insert_with(HashSet::new)
-        //     .insert(msg_id);
+        let addr = ctx.address();
 
-        // self.sessions_rooms.insert(msg.room_id.to_string(), msg);
-        // println!(
-        //     "sessions: {:?}, rooms : {:?}, session_rooms: {:?} ",
-        //     self.sessions, self.rooms, self.sessions_rooms
-        // );
+        ctx.spawn(
+            async move {
+                let room = NewRoom {
+                    name: room_name,
+                    created_by: user_id.clone(),
+                };
+
+                // Attempt to create the room in the database
+                let room_result = create_room(&db_pool.unwrap(), room).await;
+
+                match room_result {
+                    Ok(room) => {
+                        // If room creation succeeds, send AddRoom message
+                        let add_room_result = addr
+                            .send(AddRoom {
+                                id: user_id.clone(),
+                                room_id: room.id,
+                            })
+                            .await;
+
+                        if let Err(err) = add_room_result {
+                            println!("Failed to add room: {:?}", err);
+                        }
+                    }
+                    Err(err) => {
+                        println!("Failed to create room: {:?}", err);
+                    }
+                }
+            }
+            .into_actor(self),
+        );
     }
+
+    // let room_result = executor::block_on(create_room(db_pool, room));
+
+    // let room = match room_result {
+    //     Ok(room) => room,
+    //     Err(_) => (),
+    // };
+    // TODO: add the room to the rooms hashmap
+
+    // self.rooms
+    //     .entry(msg.room_id.clone())
+    //     .or_insert_with(HashSet::new)
+    //     .insert(msg_id);
+
+    // self.sessions_rooms.insert(msg.room_id.to_string(), msg);
+    // println!(
+    //     "sessions: {:?}, rooms : {:?}, session_rooms: {:?} ",
+    //     self.sessions, self.rooms, self.sessions_rooms
+    // );
 }
 
 impl Handler<JoinRoom> for ChatServer {
