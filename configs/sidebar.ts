@@ -2,6 +2,7 @@
 
 import { IoHome } from "react-icons/io5";
 import { MdGroupAdd, MdGroups } from "react-icons/md";
+import { useModalStore } from "@/hooks";
 
 export const sidebarConfig = [
   {
@@ -26,6 +27,9 @@ export const sidebarConfig = [
     path: null,
     action: () => {
       console.log("Join Group");
+      const store = useModalStore.getState();
+      const toggleJoinGroup = store.setOpenClose;
+      toggleJoinGroup();
     },
   },
 ];

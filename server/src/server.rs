@@ -1,6 +1,5 @@
 use actix::prelude::*;
-use futures::executor;
-use log::info;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::PgPool;
@@ -63,6 +62,13 @@ pub struct AddRoom {
     pub room_id: i32,
 }
 
+#[derive(Message, Deserialize, Serialize, Debug, Clone)]
+#[rtype(result = "()")]
+pub struct AddRoomBulk {
+    pub room_id: i32,
+    pub member_ids: Vec<Uuid>,
+}
+
 #[derive(Debug)]
 pub struct ChatServer {
     sessions: HashMap<Uuid, Recipient<Message>>,
@@ -118,48 +124,66 @@ impl Handler<AddRoom> for ChatServer {
 
     fn handle(&mut self, msg: AddRoom, _: &mut Self::Context) -> Self::Result {
         self.rooms.entry(msg.room_id).or_default().insert(msg.id);
-        info!("new room: {:?}", self.rooms );
+        info!("new room: {:?}", self.rooms);
+    }
+}
+
+impl Handler<AddRoomBulk> for ChatServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: AddRoomBulk, _: &mut Self::Context) -> Self::Result {
+        self.rooms
+            .entry(msg.room_id)
+            .or_insert_with(HashSet::new)
+            .extend(msg.member_ids);
+
+        info!("sessions: {:?}, rooms : {:?}", self.sessions, self.rooms);
     }
 }
 
 impl Handler<Connect> for ChatServer {
     type Result = String;
 
-    fn handle(&mut self, msg: Connect, _: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) -> Self::Result {
         let id = msg.id;
         let db_pool = msg.db_pool.clone();
-        self.db_pool = Some(msg.db_pool.clone());
+        self.db_pool = Some(db_pool.clone());
         self.sessions.insert(id, msg.addr.clone());
+        let addr = ctx.address();
 
-        // self.send_message(
-        //     &0,
-        //     &json!({
-        //         "id": id,
-        //         "chat_type": "message",
-        //         "message": "Welcome to Main Room!"
-        //     })
-        //     .to_string(),
-        //     None,
-        // );
+        ctx.spawn(
+            async move {
+                let rooms_result = get_rooms_with_members_ids(&db_pool).await;
+                match rooms_result {
+                    Ok(rooms_data) => {
+                        for room in rooms_data.iter() {
+                            // Collect all member IDs for the room
+                            let member_ids: Vec<Uuid> = room.members.clone();
 
-        let rooms_result = executor::block_on(get_rooms_with_members_ids(&db_pool));
+                            // Create a bulk message for adding all members to the room
+                            let room_to_add_bulk = AddRoomBulk {
+                                room_id: room.id,
+                                member_ids,
+                            };
 
-        let rooms = match rooms_result {
-            Ok(rooms) => rooms,
-            Err(e) => {
-                println!("Failed to fetch rooms: {:?}", e);
-                vec![]
+                            // Send a single message to the actor for bulk room addition
+                            let add_room_result = addr.send(room_to_add_bulk.clone()).await;
+
+                            if let Err(err) = add_room_result {
+                                warn!(
+                                    "Error: {:?} while adding room in bulk: {:?}",
+                                    err, room_to_add_bulk
+                                );
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("Failed to fetch rooms: {:?}", e);
+                    }
+                };
             }
-        };
-
-        for room in rooms.iter() {
-            let entry = self.rooms.entry(room.id).or_insert_with(HashSet::new);
-            room.members.iter().for_each(|id| {
-                entry.insert(*id);
-            });
-        }
-
-        println!("sessions: {:?}, rooms : {:?}", self.sessions, self.rooms);
+            .into_actor(self),
+        );
         id.to_string()
     }
 }
@@ -226,25 +250,6 @@ impl Handler<CreateRoom> for ChatServer {
             .into_actor(self),
         );
     }
-
-    // let room_result = executor::block_on(create_room(db_pool, room));
-
-    // let room = match room_result {
-    //     Ok(room) => room,
-    //     Err(_) => (),
-    // };
-    // TODO: add the room to the rooms hashmap
-
-    // self.rooms
-    //     .entry(msg.room_id.clone())
-    //     .or_insert_with(HashSet::new)
-    //     .insert(msg_id);
-
-    // self.sessions_rooms.insert(msg.room_id.to_string(), msg);
-    // println!(
-    //     "sessions: {:?}, rooms : {:?}, session_rooms: {:?} ",
-    //     self.sessions, self.rooms, self.sessions_rooms
-    // );
 }
 
 impl Handler<JoinRoom> for ChatServer {

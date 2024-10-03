@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 
-import { receivedMessageT, sendMessageT } from "../utils/types";
+import { receivedMessageT, sendMessageT } from "@/utils/types";
 import { useSession } from "next-auth/react";
 
 type SocketProviderProps = {
@@ -37,7 +37,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         socket.send(
           JSON.stringify({
             mode: "CreateRoom",
-            message: JSON.stringify({ room_id: "1234", name: "gaurav" }),
+            message: JSON.stringify({ id: session?.user.id, name: "gauravs-room" }),
           })
         );
         return;
@@ -74,6 +74,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
     const connUrl = `${socketUrl}/${session.user.id}`;
+
     const _socket = new WebSocket(connUrl);
 
     _socket.onopen = () => {

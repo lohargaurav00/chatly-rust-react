@@ -7,16 +7,18 @@ use crate::{
 };
 
 #[post("create-room")]
-pub async fn route_create_room(db_pool: web::Data<PgPool>, room: web::Json<NewRoom>) -> HttpResponse {
-    
+pub async fn route_create_room(
+    db_pool: web::Data<PgPool>,
+    room: web::Json<NewRoom>,
+) -> HttpResponse {
     let room = NewRoom {
         name: room.name.clone(),
-        created_by: room.created_by.clone()        
+        created_by: room.created_by.clone(),
     };
 
-    let result = create_room(&db_pool, room ).await;
+    let result = create_room(&db_pool, room).await;
 
-       match result {
+    match result {
         Ok(room) => handle_response(
             StatusCode::CREATED,
             Status::Ok,
@@ -32,13 +34,21 @@ pub async fn route_create_room(db_pool: web::Data<PgPool>, room: web::Json<NewRo
     }
 }
 
-pub async fn create_room (db_pool : &PgPool , room : NewRoom ) -> Result<Room , sqlx::Error> {
+pub async fn create_room(db_pool: &PgPool, room: NewRoom) -> Result<Room, sqlx::Error> {
     let result = sqlx::query_as!(
         Room,
         r#"
-        INSERT INTO rooms (name, created_by)
-        VALUES ($1, $2)
-        RETURNING id, name, last_message, created_by, created_at, updated_at
+    WITH create_room AS (
+    INSERT INTO rooms (name, created_by)
+    VALUES ($1, $2)
+    RETURNING id, name, last_message, created_by, created_at, updated_at
+    ),
+    insert_room_users AS (INSERT INTO room_users (room_id, user_id)
+    SELECT id, created_by
+    FROM create_room
+    RETURNING *
+    )
+    SELECT * from create_room; 
         "#,
         room.name,
         room.created_by,

@@ -1,5 +1,5 @@
-"use client"
-import {  create } from 'zustand';
+"use client";
+import { create } from "zustand";
 
 type ModalStore = {
   isOpen: boolean;
@@ -8,7 +8,9 @@ type ModalStore = {
 
 const useModalStore = create<ModalStore>((set) => ({
   isOpen: false,
-  setOpenClose: () => set((state) => ({ isOpen: !state.isOpen })),
+  setOpenClose: () => {
+    set((state) => ({ isOpen: !state.isOpen }));
+  },
 }));
 
 export default useModalStore;
