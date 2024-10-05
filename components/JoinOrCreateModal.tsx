@@ -5,7 +5,6 @@ import { HiOutlineClipboardCopy } from "react-icons/hi";
 
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -41,11 +40,6 @@ const JoinOrCreateModal = () => {
         setRoomId("");
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="outline" className="text-black">
-          Join
-        </Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="w-full text-center">

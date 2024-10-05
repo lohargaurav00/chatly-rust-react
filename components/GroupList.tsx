@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+
 import {
   Avatar,
   AvatarFallback,
@@ -7,19 +8,30 @@ import {
   Box,
   GroupItem,
   Input,
+  Loader,
   NoData,
 } from "./index";
 import { GroupT } from "@/utils";
 
 interface GroupItemsListProps {
   groups: GroupT[];
+  isLoading: boolean;
   onClick: (group: GroupT) => void;
 }
 
-const GroupItemsList: React.FC<GroupItemsListProps> = ({ groups, onClick }) => {
+const GroupItemsList: React.FC<GroupItemsListProps> = ({
+  groups,
+  onClick,
+  isLoading,
+}) => {
+  if (isLoading) {
+    return <Loader />;
+  }
+
   if (groups && groups.length <= 0) {
     return <NoData message="Join Group's To Chat" />;
   }
+
   return (
     <div className="flex flex-col h-full gap-2 overflow-y-auto">
       {groups.map((group) => {
@@ -38,10 +50,15 @@ const GroupItemsList: React.FC<GroupItemsListProps> = ({ groups, onClick }) => {
 
 interface GroupListProps {
   groups: GroupT[];
+  isLoading: boolean;
   onGroupClick: (group: GroupT) => void;
 }
 
-const GroupList: React.FC<GroupListProps> = ({ groups, onGroupClick }) => {
+const GroupList: React.FC<GroupListProps> = ({
+  groups,
+  onGroupClick,
+  isLoading,
+}) => {
   const [search, setSearch] = React.useState("");
 
   const filGroups = search
@@ -67,6 +84,7 @@ const GroupList: React.FC<GroupListProps> = ({ groups, onGroupClick }) => {
         />
         <GroupItemsList
           groups={filGroups}
+          isLoading={isLoading}
           onClick={(group) => {
             onGroupClick(group);
           }}

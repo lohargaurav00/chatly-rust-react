@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import { ModalProvider, NextAuthProvider, SocketProvider, ThemeProvider } from "@/providers";
+import {
+  ModalProvider,
+  NextAuthProvider,
+  SocketProvider,
+  ThemeProvider,
+} from "@/providers";
 import "./globals.css";
 import { Layout, Toaster } from "@/components/index";
 
@@ -28,8 +33,8 @@ export default function RootLayout({
         >
           <NextAuthProvider>
             <SocketProvider>
+              <ModalProvider />
               <Layout>{children}</Layout>
-              <ModalProvider/>
               <Toaster />
             </SocketProvider>
           </NextAuthProvider>

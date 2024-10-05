@@ -1,5 +1,7 @@
 use actix_web::{get, http::StatusCode, post, web, HttpResponse};
+use log::info;
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::{
     models::{JoinRoom, NewRoom, Room, RoomWithMembers, RoomWithMembersIds},
@@ -252,6 +254,45 @@ pub async fn route_get_rooms_with_members_id(db_pool: web::Data<PgPool>) -> Http
     }
 }
 
+pub async fn get_user_rooms(db_pool: &PgPool, user_id: Uuid) -> Result<Vec<Room>, sqlx::Error> {
+    let rooms_result = sqlx::query_as::<_, Room>(
+        r#"
+SELECT r.*
+FROM room_users as ru
+JOIN rooms as r ON ru.room_id = r.id
+where ru.user_id = $1
+    "#,
+    )
+    .bind(user_id)
+    .fetch_all(db_pool)
+    .await;
+
+    rooms_result
+}
+
+#[get("/get-user-rooms/{user_id}")]
+pub async fn route_get_user_rooms(
+    db_pool: web::Data<PgPool>,
+    user_id: web::Path<Uuid>,
+) -> HttpResponse {
+    let rooms_result = get_user_rooms(&db_pool, *user_id).await;
+
+    match rooms_result {
+        Ok(rooms) => handle_response(
+            StatusCode::OK,
+            Status::Ok,
+            "Rooms fetched successfully",
+            Some(rooms),
+        ),
+        Err(e) => handle_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Status::Error,
+            &format!("Failed to fetched rooms {:?}", e),
+            Some(()),
+        ),
+    }
+}
+
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(route_create_room);
     cfg.service(route_get_rooms);
@@ -259,4 +300,5 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(join_room);
     cfg.service(get_room_with_members);
     cfg.service(route_get_rooms_with_members_id);
+    cfg.service(route_get_user_rooms);
 }

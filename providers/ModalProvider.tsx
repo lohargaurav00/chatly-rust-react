@@ -16,6 +16,7 @@ const ModalProvider: React.FC<ModalProviderProps> = () => {
   if (!isMount) {
     return null;
   }
+  
   return (
     <>
       <JoinOrCreateModal />
