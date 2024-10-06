@@ -3,6 +3,7 @@ import * as React from "react";
 
 import { receivedMessageT, sendMessageT } from "@/utils/types";
 import { useSession } from "next-auth/react";
+import { useRoomStore } from "@/hooks";
 
 type SocketProviderProps = {
   children: React.ReactNode;
@@ -30,6 +31,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [messages, setMessages] = React.useState<receivedMessageT[]>([]);
 
   const { data: session, status } = useSession();
+  const { room } = useRoomStore();
 
   const joinRoom: SocketContextType["joinRoom"] = (roomId) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -37,20 +39,24 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         socket.send(
           JSON.stringify({
             mode: "CreateRoom",
-            message: JSON.stringify({ id: session?.user.id, name: "gauravs-room" }),
+            message: JSON.stringify({
+              id: session?.user.id,
+              name: "gauravs-room",
+            }),
           })
         );
         return;
       }
-      socket.send(
-        JSON.stringify({
-          mode: "JoinRoom",
-          message: JSON.stringify({
-            id: "a0000e13-56f4-4c9d-adbc-e934a1d35b3e",
-            room_id: "1234",
-          }),
-        })
-      );
+
+      const message = JSON.stringify({
+        mode: "JoinRoom",
+        message: JSON.stringify({
+          id: session?.user.id,
+          room_id: +roomId,
+        }),
+      });
+      console.log(message);
+      socket.send(message);
     }
   };
 
@@ -62,7 +68,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           message: JSON.stringify({
             chat_type: "send-message",
             ...message,
-            room_id: "1234",
+            room_id: room,
           }),
         })
       );
@@ -85,9 +91,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     _socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       console.log("chat_type", message);
-      if (message.chat_type !== "message") return;
-      // console.log("Received message", message);
-      setMessages((prev) => [...prev, message]);
+      const chatTypes = ["message", "error", "info"];
+      if (!chatTypes.includes(message.chat_type)) return;
+      console.log("Received message", message);
+      if (message.chat_type === "message") {
+        setMessages((prev) => [...prev, message]);
+      }
     };
 
     _socket.onclose = () => {

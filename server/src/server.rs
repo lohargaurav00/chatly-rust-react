@@ -1,4 +1,5 @@
 use actix::prelude::*;
+
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -11,8 +12,8 @@ use std::{
 };
 
 use crate::{
-    api::handlers::rooms::{create_room, get_rooms_with_members_ids},
-    models::NewRoom,
+    api::handlers::rooms::{create_room, get_rooms_with_members_ids, join_room_fn},
+    models::{JoinRoom as ModelJoinRoom, NewRoom},
 };
 
 #[derive(Message)]
@@ -48,7 +49,7 @@ pub struct CreateRoom {
     pub name: String,
 }
 
-#[derive(Message, Deserialize, Serialize, Debug)]
+#[derive(Message, Deserialize, Serialize, Debug, Clone)]
 #[rtype(result = "()")]
 pub struct JoinRoom {
     pub id: Uuid,
@@ -77,11 +78,27 @@ pub struct ChatServer {
     db_pool: Option<PgPool>,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Message, Debug, Default, Serialize, Deserialize)]
+#[rtype(result = "()")]
 pub struct Error {
     pub id: Uuid,
     pub chat_type: String,
     pub message: String,
+}
+
+#[derive(Message, Debug, Clone, Serialize)]
+#[rtype(result = "()")]
+pub struct SendMessage {
+    pub room_id: i32,
+    pub msg: String,
+    pub skip_id: Option<Uuid>,
+}
+
+#[derive(Message, Debug, Clone, Serialize)]
+#[rtype(result = "()")]
+pub struct Info {
+    id: Uuid,
+    msg: String,
 }
 
 impl Display for Error {
@@ -110,7 +127,7 @@ impl ChatServer {
                 };
             });
         } else {
-            println!("Room does not exist : {}", room);
+            info!("Room does not exist : {}", room);
         }
     }
 }
@@ -123,8 +140,17 @@ impl Handler<AddRoom> for ChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: AddRoom, _: &mut Self::Context) -> Self::Result {
-        self.rooms.entry(msg.room_id).or_default().insert(msg.id);
-        info!("new room: {:?}", self.rooms);
+        self.rooms
+            .entry(msg.room_id)
+            .and_modify(|members| {
+                members.insert(msg.id);
+            })
+            .or_insert_with(|| {
+                let mut members = HashSet::new();
+                members.insert(msg.id);
+                members
+            });
+        info!("updated rooms: {:?}", self.rooms);
     }
 }
 
@@ -138,6 +164,33 @@ impl Handler<AddRoomBulk> for ChatServer {
             .extend(msg.member_ids);
 
         info!("sessions: {:?}, rooms : {:?}", self.sessions, self.rooms);
+    }
+}
+
+impl Handler<Error> for ChatServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: Error, _: &mut Self::Context) -> Self::Result {
+        if let Some(addr) = self.sessions.get_mut(&msg.id) {
+            addr.do_send(Message(msg.to_string()));
+        }
+    }
+}
+
+impl Handler<SendMessage> for ChatServer {
+    type Result = ();
+    fn handle(&mut self, msg: SendMessage, _: &mut Self::Context) -> Self::Result {
+        self.send_message(&msg.room_id, &msg.msg, msg.skip_id);
+    }
+}
+
+impl Handler<Info> for ChatServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: Info, _: &mut Self::Context) -> Self::Result {
+        if let Some(addr) = self.sessions.get_mut(&msg.id) {
+            addr.do_send(Message(msg.msg));
+        }
     }
 }
 
@@ -211,7 +264,6 @@ impl Handler<CreateRoom> for ChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: CreateRoom, ctx: &mut Self::Context) -> Self::Result {
-        // TODO: create room to database and get the room id
         let db_pool = self.db_pool.clone();
         let room_name = msg.name.clone();
         let user_id = msg.id.clone();
@@ -255,30 +307,73 @@ impl Handler<CreateRoom> for ChatServer {
 impl Handler<JoinRoom> for ChatServer {
     type Result = ();
 
-    fn handle(&mut self, msg: JoinRoom, _: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: JoinRoom, ctx: &mut Self::Context) -> Self::Result {
         let is_room_exist = self.rooms.contains_key(&msg.room_id);
-        if is_room_exist {
-            self.send_message(
-                &msg.room_id,
-                &json!({
-                    "id": msg.id,
-                    "chat_type": "message",
-                    "message": format!("{} Joined the room", msg.id)
-                })
-                .to_string(),
-                None,
-            );
 
-            if let Some(room_members) = self.rooms.get_mut(&msg.room_id) {
-                room_members.insert(msg.id);
-            }
+        if is_room_exist {
+            let db_pool = self.db_pool.clone().unwrap();
+            let addr = ctx.address();
+
+            ctx.spawn(
+                async move {
+                    let join_room = {
+                        ModelJoinRoom {
+                            id: msg.id.clone(),
+                            room_id: msg.room_id.clone(),
+                        }
+                    };
+                    let join_room_result = join_room_fn(&db_pool, join_room).await;
+
+                    match join_room_result {
+                        Ok(joined) => {
+                            // If successful, add the user to the room
+                            let _ = addr
+                                .send(AddRoom {
+                                    id: msg.id.clone(),
+                                    room_id: msg.room_id.clone(),
+                                })
+                                .await;
+
+                            addr.do_send(SendMessage {
+                                room_id: msg.room_id,
+                                msg: json!({
+                                    "id": msg.id,
+                                    "chat_type": "message",
+                                    "message": format!("{} Joined the room", msg.id)
+                                })
+                                .to_string(),
+                                skip_id: None,
+                            });
+
+                            addr.do_send(Info {
+                                id: msg.id,
+                                msg: json!({
+                                    "join_room": joined,
+                                    "chat_type": "info",
+                                    "message": "Successfully joined room"
+                                })
+                                .to_string(),
+                            });
+                        }
+                        Err(e) => {
+                            addr.do_send(Error {
+                                id: msg.id,
+                                chat_type: "error".to_string(),
+                                message: format!("Failed to join room: {}", e),
+                            });
+                        }
+                    }
+                }
+                .into_actor(self),
+            );
         } else {
+            // Room doesn't exist, send an error message to the user
             if let Some(addr) = self.sessions.get(&msg.id) {
                 addr.do_send(Message(
                     Error {
                         id: msg.id,
                         chat_type: "error".to_string(),
-                        message: format!("Room does not exist with {} this id", msg.room_id),
+                        message: format!("Room does not exist with id {}", msg.room_id),
                     }
                     .to_string(),
                 ));

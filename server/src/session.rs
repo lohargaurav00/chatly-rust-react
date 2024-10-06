@@ -1,6 +1,7 @@
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use sqlx::PgPool;
@@ -28,7 +29,6 @@ pub enum Mode {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ClientInteraction {
-    id: Option<Uuid>,
     mode: Mode,
     message: String,
 }
@@ -97,6 +97,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
                 self.hb = Instant::now();
             }
             ws::Message::Text(text) => {
+                info!("recived msg : {}", text);
                 let json_msg = serde_json::from_str::<ClientInteraction>(&text.to_string());
                 if let Err(err) = json_msg {
                     println!("{err}");
@@ -106,6 +107,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
                 let inp_msg = json_msg.as_ref().unwrap();
                 match inp_msg.mode {
                     Mode::JoinRoom => {
+                        info!("joining room....");
                         let inp = serde_json::from_str::<JoinRoom>(&inp_msg.message);
                         if let Err(err) = inp {
                             println!("{err}");

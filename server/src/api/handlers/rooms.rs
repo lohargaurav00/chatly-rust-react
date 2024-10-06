@@ -1,5 +1,4 @@
 use actix_web::{get, http::StatusCode, post, web, HttpResponse};
-use log::info;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -111,13 +110,10 @@ pub async fn get_room_by_id(db_pool: web::Data<PgPool>, id: web::Path<i64>) -> H
     }
 }
 
-#[post("join-room")]
-pub async fn join_room(db_pool: web::Data<PgPool>, join_room: web::Json<JoinRoom>) -> HttpResponse {
-    let join_room = JoinRoom {
-        id: join_room.id.clone(),
-        room_id: join_room.room_id.clone(),
-    };
-
+pub async fn join_room_fn(
+    db_pool: &PgPool,
+    join_room: JoinRoom,
+) -> Result<RoomWithMembers, sqlx::Error> {
     let join_result = sqlx::query_as!(
         RoomWithMembers,
         r#"
@@ -155,9 +151,23 @@ GROUP BY r.id;
         join_room.room_id,
         join_room.id
     )
-    .fetch_all(db_pool.get_ref())
+    .fetch_one(db_pool)
     .await;
 
+    join_result
+}
+
+#[post("join-room")]
+pub async fn route_join_room(
+    db_pool: web::Data<PgPool>,
+    join_room: web::Json<JoinRoom>,
+) -> HttpResponse {
+    let join_room = JoinRoom {
+        id: join_room.id.clone(),
+        room_id: join_room.room_id.clone(),
+    };
+
+    let join_result = join_room_fn(&db_pool, join_room).await;
     match join_result {
         Ok(room) => handle_response(
             StatusCode::OK,
@@ -173,7 +183,6 @@ GROUP BY r.id;
         ),
     }
 }
-
 #[get("room-with-members/{id}")]
 pub async fn get_room_with_members(db_pool: web::Data<PgPool>, id: web::Path<i32>) -> HttpResponse {
     let room_result = sqlx::query_as!(
@@ -297,7 +306,7 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(route_create_room);
     cfg.service(route_get_rooms);
     cfg.service(get_room_by_id);
-    cfg.service(join_room);
+cfg.service(route_join_room);
     cfg.service(get_room_with_members);
     cfg.service(route_get_rooms_with_members_id);
     cfg.service(route_get_user_rooms);
