@@ -1,7 +1,7 @@
 "use client"
 import { create } from "zustand";
 
-import { toast } from "@/components";
+import { toast } from "@/components/index";
 import { getRequest } from "@/lib/apiHandlers";
 import { GroupT } from "@/utils";
 

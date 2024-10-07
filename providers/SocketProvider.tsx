@@ -1,9 +1,10 @@
 "use client";
 import * as React from "react";
+import { useSession } from "next-auth/react";
 
 import { receivedMessageT, sendMessageT } from "@/utils/types";
-import { useSession } from "next-auth/react";
-import { useRoomStore } from "@/hooks";
+import { useGroupStore, useRoomStore } from "@/hooks";
+import { toast } from "@/components/index";
 
 type SocketProviderProps = {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ type SocketProviderProps = {
 type SocketContextType = {
   socket: WebSocket | null;
   joinRoom: (roomId: string) => void;
+  createRoom: (name: string) => void;
   sendMessage: (message: sendMessageT) => void;
   messages: receivedMessageT[];
 };
@@ -32,22 +34,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   const { data: session, status } = useSession();
   const { room } = useRoomStore();
+  const { groups, setGroups } = useGroupStore();
 
   const joinRoom: SocketContextType["joinRoom"] = (roomId) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      if (roomId === "create") {
-        socket.send(
-          JSON.stringify({
-            mode: "CreateRoom",
-            message: JSON.stringify({
-              id: session?.user.id,
-              name: "gauravs-room",
-            }),
-          })
-        );
-        return;
-      }
-
       const message = JSON.stringify({
         mode: "JoinRoom",
         message: JSON.stringify({
@@ -55,8 +45,22 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           room_id: +roomId,
         }),
       });
-      console.log(message);
+
       socket.send(message);
+    }
+  };
+
+  const createRoom: SocketContextType["createRoom"] = (name) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(
+        JSON.stringify({
+          mode: "CreateRoom",
+          message: JSON.stringify({
+            id: session?.user.id,
+            name,
+          }),
+        })
+      );
     }
   };
 
@@ -93,9 +97,26 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       console.log("chat_type", message);
       const chatTypes = ["message", "error", "info"];
       if (!chatTypes.includes(message.chat_type)) return;
-      console.log("Received message", message);
-      if (message.chat_type === "message") {
-        setMessages((prev) => [...prev, message]);
+
+      switch (message?.chat_type) {
+        case "message":
+          setMessages((prev) => [...prev, message]);
+          break;
+
+        case "info":
+          const room = message?.join_room ?  message.join_room : message.create_room;
+          setGroups([...groups, room]);
+          break;
+
+        case "error":
+          toast({
+            title: "Error",
+            description: message?.message,
+          });
+          break;
+
+        default:
+          break;
       }
     };
 
@@ -111,7 +132,9 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   }, [session, status]);
 
   return (
-    <SocketContext.Provider value={{ socket, joinRoom, sendMessage, messages }}>
+    <SocketContext.Provider
+      value={{ socket, joinRoom, createRoom, sendMessage, messages }}
+    >
       {children}
     </SocketContext.Provider>
   );

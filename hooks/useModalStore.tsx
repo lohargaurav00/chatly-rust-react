@@ -2,15 +2,19 @@
 import { create } from "zustand";
 
 type ModalStore = {
-  isOpen: boolean;
-  setOpenClose: () => void;
+  joinGroup: boolean;
+  createGroup: boolean;
+  setJoinGroup: () => void;
+  setCreateGroup: () => void;
 };
 
 const useModalStore = create<ModalStore>((set) => ({
-  isOpen: false,
-  setOpenClose: () => {
-    set((state) => ({ isOpen: !state.isOpen }));
+  joinGroup: false,
+  createGroup: false,
+  setJoinGroup: () => {
+    set((state) => ({ joinGroup: !state.joinGroup }));
   },
+  setCreateGroup: () => set((state) => ({ createGroup: !state.createGroup })),
 }));
 
 export default useModalStore;

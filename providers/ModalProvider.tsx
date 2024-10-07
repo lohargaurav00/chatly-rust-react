@@ -1,8 +1,8 @@
 "use client";
 
-import  JoinOrCreateModal  from "@/components/JoinOrCreateModal";
 import React, { useEffect, useState } from "react";
 
+import { CreateGroup , JoinGroup} from "@/components/index";
 
 interface ModalProviderProps {}
 
@@ -19,7 +19,8 @@ const ModalProvider: React.FC<ModalProviderProps> = () => {
   
   return (
     <>
-      <JoinOrCreateModal />
+      <JoinGroup />
+      <CreateGroup/>
     </>
   );
 };

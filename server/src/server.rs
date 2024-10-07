@@ -282,17 +282,19 @@ impl Handler<CreateRoom> for ChatServer {
 
                 match room_result {
                     Ok(room) => {
-                        // If room creation succeeds, send AddRoom message
-                        let add_room_result = addr
-                            .send(AddRoom {
-                                id: user_id.clone(),
-                                room_id: room.id,
+                        let _ = addr.do_send(AddRoom {
+                            id: user_id.clone(),
+                            room_id: room.id,
+                        });
+                        addr.do_send(Info {
+                            id: msg.id,
+                            msg: json!({
+                                "create_room": room,
+                                "chat_type": "info",
+                                "message": "Room Created Successfully"
                             })
-                            .await;
-
-                        if let Err(err) = add_room_result {
-                            println!("Failed to add room: {:?}", err);
-                        }
+                            .to_string(),
+                        });
                     }
                     Err(err) => {
                         println!("Failed to create room: {:?}", err);

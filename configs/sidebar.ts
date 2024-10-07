@@ -18,7 +18,9 @@ export const sidebarConfig = [
     icon: MdGroupAdd,
     path: null,
     action: () => {
-      console.log("Create Group");
+      const store = useModalStore.getState();
+      const toggleCreateGroup = store.setCreateGroup;
+      toggleCreateGroup();
     },
   },
   {
@@ -26,9 +28,8 @@ export const sidebarConfig = [
     icon: MdGroups,
     path: null,
     action: () => {
-      console.log("Join Group");
       const store = useModalStore.getState();
-      const toggleJoinGroup = store.setOpenClose;
+      const toggleJoinGroup = store.setJoinGroup;
       toggleJoinGroup();
     },
   },
