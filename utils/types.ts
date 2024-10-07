@@ -28,5 +28,5 @@ export type UserT = {
   name: string;
   email: string;
   user_name: string;
-  profile_photo: string;
+ image: string;
 };

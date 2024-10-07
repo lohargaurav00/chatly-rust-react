@@ -2,15 +2,15 @@
 
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { DefaultSession, Session, TokenSet, User } from "next-auth";
+import { DefaultSession, Session, User } from "next-auth";
+import { JWT } from "next-auth/jwt";
 
 import prisma from "@/lib/prisma";
+import { UserT } from "@/utils";
 
 declare module "next-auth" {
   interface Session {
-    user: {
-      id: string | unknown;
-    } & DefaultSession["user"];
+    user: UserT & DefaultSession["user"];
   }
 }
 
@@ -86,10 +86,22 @@ export const authConfig = {
     }),
   ],
   callbacks: {
-    async session({ session, token }: { session: Session; token: TokenSet }) {
-      if (session?.user && token) {
-        session.user.id = token.sub;
+    async jwt({ token, user}: { token: JWT; user: UserT }) {
+      if (user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.user_name = user.user_name,
+        token.image = user.image;
       }
+
+      return token;
+    },
+    async session({ session, token}: { session: Session; token: JWT }) {
+      if (session?.user && token) {
+        session.user.id = token.sub as string;
+        session.user.user_name = token.user_name as string;
+      };
 
       return session;
     },

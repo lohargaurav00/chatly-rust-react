@@ -16,7 +16,7 @@ pub struct User {
     pub user_name: String,
     pub email: String,
     pub password: String,
-    pub profile_photo: Option<String>,
+    pub image: Option<String>,
     pub created_at: i64,
     pub updated_at: Option<i64>,
 }
@@ -29,7 +29,7 @@ pub struct UserWithRooms {
     pub user_name: String,
     pub email: String,
     pub password: String,
-    pub profile_photo: Option<String>,
+    pub image: Option<String>,
     pub created_at: i64,
     pub updated_at: Option<i64>,
     pub rooms: Vec<Room>,

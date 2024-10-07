@@ -1,5 +1,7 @@
 "use client";
 import * as React from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 import {
   Avatar,
@@ -7,10 +9,12 @@ import {
   AvatarImage,
   ChatHeader,
   MessageInput,
+  NoData,
 } from "./index";
 import { avatarFLGen, ReceiveMessageT, UserT } from "@/utils";
 import { cn } from "@/lib/utils";
 import { messages } from "@/utils/dummyMessages";
+import { useGroupStore } from "@/hooks";
 
 interface MessageWindowProps {
   messages: ReceiveMessageT[];
@@ -45,7 +49,7 @@ const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
           >
             {!isUserSender && (
               <Avatar className="w-7 h-7">
-                <AvatarImage src={sender.profile_photo} />
+                <AvatarImage src={sender.image} />
                 <AvatarFallback>{avatarFLGen(sender.name)}</AvatarFallback>
               </Avatar>
             )}
@@ -59,7 +63,7 @@ const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
             </div>
             {isUserSender && (
               <Avatar className="w-7 h-7">
-                <AvatarImage src={sender.profile_photo} />
+                <AvatarImage src={sender.image} />
                 <AvatarFallback>{avatarFLGen(sender.name)}</AvatarFallback>
               </Avatar>
             )}
@@ -72,14 +76,22 @@ const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
 };
 
 const ChatWindow = () => {
+  const {activeGroup} = useGroupStore();
+  const {data: session}  = useSession()
+  const router = useRouter();
+
+  if(!session?.user){
+    router.push('/login')
+    return null;     
+  }
+
+  if(!activeGroup) {
+    return <NoData message="please select a group to chat" />
+  }
   return (
     <div className="flex flex-col h-full w-full ">
       <ChatHeader
-        group={{
-          id: 1,
-          name: "Group name 1",
-          group_photo: "https://github.com/shadcn.png",
-        }}
+        group={activeGroup}
         onGroupClick={() => {}}
       />
       <div
@@ -87,13 +99,7 @@ const ChatWindow = () => {
         className="flex flex-col gap-2 w-full h-full p-2 pb-4 overflow-hidden"
       >
         <MessageWindow
-          user={{
-            id: 1,
-            name: "Gaurav Lohar",
-            email: "lohargaurav00@gmail.com",
-            user_name: "lohargaurav00",
-            profile_photo: "https://github.com/shadcn.png",
-          }}
+          user={session?.user}
           messages={messages}
         />
         <MessageInput />

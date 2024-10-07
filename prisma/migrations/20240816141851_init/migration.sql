@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "name" VARCHAR(100) NOT NULL,
     "email" VARCHAR(100) NOT NULL,
     "user_name" VARCHAR(100) NOT NULL,
-    "profile_photo" VARCHAR(255),
+    "image" VARCHAR(255),
     "password" VARCHAR(255) NOT NULL,
     "created_at" BIGINT NOT NULL DEFAULT EXTRACT(epoch FROM now()),
     "updated_at" BIGINT,

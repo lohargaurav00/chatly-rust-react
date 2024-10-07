@@ -8,12 +8,35 @@ datasource db {
 }
 
 model users {
-  id            String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name          String  @db.VarChar(100)
-  email         String  @unique @db.VarChar(100)
-  user_name     String  @unique @db.VarChar(100)
-  profile_photo String? @db.VarChar(255)
-  password      String  @db.VarChar(255)
-  created_at    BigInt  @default(dbgenerated("EXTRACT(epoch FROM now())"))
-  updated_at    BigInt?
+  id         String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String       @db.VarChar(100)
+  email      String       @unique @db.VarChar(100)
+  user_name  String       @unique @db.VarChar(100)
+  image      String?      @db.VarChar(255)
+  password   String       @db.VarChar(255)
+  created_at BigInt       @default(dbgenerated("EXTRACT(epoch FROM now())"))
+  updated_at BigInt?
+  room_users room_users[]
+  rooms      rooms[]
+}
+
+model room_users {
+  room_id   Int
+  user_id   String  @db.Uuid
+  joined_at BigInt? @default(dbgenerated("(EXTRACT(epoch FROM now()))::bigint"))
+  rooms     rooms   @relation(fields: [room_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users     users   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([room_id, user_id])
+}
+
+model rooms {
+  id           Int          @id(map: "rooms_new_pkey") @default(autoincrement())
+  name         String       @db.VarChar(255)
+  last_message String?
+  created_by   String       @db.Uuid
+  created_at   BigInt       @default(dbgenerated("(EXTRACT(epoch FROM now()))::bigint"))
+  updated_at   BigInt?
+  room_users   room_users[]
+  users        users        @relation(fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_user")
 }
