@@ -307,7 +307,7 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(route_create_room);
     cfg.service(route_get_rooms);
     cfg.service(get_room_by_id);
-cfg.service(route_join_room);
+    cfg.service(route_join_room);
     cfg.service(get_room_with_members);
     cfg.service(route_get_rooms_with_members_id);
     cfg.service(route_get_user_rooms);

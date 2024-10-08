@@ -51,6 +51,14 @@ export const authConfig = {
                 password: hashedPass,
               },
             });
+
+            await prisma.room_users.create({
+              data: {
+                room_id: 0,
+                user_id: newUser.id,
+              },
+            });
+
             return newUser as User;
           }
 
@@ -86,22 +94,21 @@ export const authConfig = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user}: { token: JWT; user: UserT }) {
+    async jwt({ token, user }: { token: JWT; user: UserT }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
-        token.user_name = user.user_name,
-        token.image = user.image;
+        (token.user_name = user.user_name), (token.image = user.image);
       }
 
       return token;
     },
-    async session({ session, token}: { session: Session; token: JWT }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session?.user && token) {
         session.user.id = token.sub as string;
         session.user.user_name = token.user_name as string;
-      };
+      }
 
       return session;
     },
