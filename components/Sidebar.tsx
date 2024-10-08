@@ -3,9 +3,10 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { useSession } from "next-auth/react";
 
 import { menuOptionConfig, sidebarConfig } from "@/configs";
-import { IconSize } from "@/utils";
+import { avatarFLGen, IconSize } from "@/utils";
 import {
   Avatar,
   AvatarFallback,
@@ -65,13 +66,18 @@ const MoreMenu = () => {
 
 const Sidebar: React.FC = () => {
   const router = useRouter();
+  const { data: session } = useSession();
+
+  if (!session?.user) {
+    return null;
+  }
 
   return (
     <Box className="hidden md:flex w-fit rounded-none h-full flex-col justify-between items-center gap-6 shadow-md  border-r ">
       <div className="flex flex-col items-center gap-6">
         <Avatar className="cursor-pointer hover:scale-105 duration-200 transition">
-          <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback>CN</AvatarFallback>
+          <AvatarImage src={session.user.image} />
+          <AvatarFallback>{avatarFLGen(session.user.name)}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col gap-4 w-full ">
           {sidebarConfig.map((item) => {

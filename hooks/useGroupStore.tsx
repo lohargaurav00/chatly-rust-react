@@ -10,6 +10,7 @@ interface GroupStore {
   activeGroup: GroupT | null;
   groupsLoading: boolean;
   setGroups: (groups: GroupT[]) => void;
+  addGroup: (group: GroupT) => void;
   setActiveGroup: (group: GroupT) => void;
   setGroupsLoading: (loading: boolean) => void;
   fetchGroups: (userId: {}) => void;
@@ -20,6 +21,7 @@ const useGroupStore = create<GroupStore>((set) => ({
   activeGroup: null,
   groupsLoading: false,
   setGroups: (groups) => set({ groups }),
+  addGroup: (group) => set((state) => ({groups: [...state.groups , group]})),
   setActiveGroup: (group) => set({ activeGroup: group }),
   setGroupsLoading: (loading) => set({ groupsLoading: loading }),
   fetchGroups: async (userId) => {

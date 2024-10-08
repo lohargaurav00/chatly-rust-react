@@ -269,7 +269,8 @@ pub async fn get_user_rooms(db_pool: &PgPool, user_id: Uuid) -> Result<Vec<Room>
 SELECT r.*
 FROM room_users as ru
 JOIN rooms as r ON ru.room_id = r.id
-where ru.user_id = $1
+WHERE ru.user_id = $1
+ORDER BY ru.joined_at 
     "#,
     )
     .bind(user_id)

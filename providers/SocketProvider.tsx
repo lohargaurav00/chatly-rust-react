@@ -34,7 +34,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   const { data: session, status } = useSession();
   const { room } = useRoomStore();
-  const { groups, setGroups } = useGroupStore();
+  const { groups, addGroup } = useGroupStore();
 
   const joinRoom: SocketContextType["joinRoom"] = (roomId) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -105,7 +105,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
         case "info":
           const room = message?.join_room ?  message.join_room : message.create_room;
-          setGroups([...groups, room]);
+          addGroup(room);
           break;
 
         case "error":
