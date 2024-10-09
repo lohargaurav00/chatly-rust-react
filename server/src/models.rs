@@ -79,3 +79,26 @@ pub struct JoinRoom {
     pub id: Uuid,
     pub room_id: i32,
 }
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, FromRow)]
+pub struct AddRoomMessage {
+    pub message: String,
+    pub room_id: i32,
+    pub sent_by: Uuid,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, FromRow)]
+pub struct RoomMessage {
+    pub id: i64,
+    pub message: String,
+    pub room_id: i32,
+    pub sent_by: Uuid,
+    pub created_at: i64,
+    pub updated_at: Option<i64>,
+    pub message_type: String,
+    pub is_read: Option<bool>,
+    pub is_edited: bool,
+    pub reply_to: Option<i64>,
+    pub deleted_at: Option<i64>,
+    pub status: i32,
+}
