@@ -8,16 +8,17 @@ datasource db {
 }
 
 model users {
-  id         String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String       @db.VarChar(100)
-  email      String       @unique @db.VarChar(100)
-  user_name  String       @unique @db.VarChar(100)
-  image      String?      @db.VarChar(255)
-  password   String       @db.VarChar(255)
-  created_at BigInt       @default(dbgenerated("EXTRACT(epoch FROM now())"))
-  updated_at BigInt?
-  room_users room_users[]
-  rooms      rooms[]
+  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name          String          @db.VarChar(100)
+  email         String          @unique @db.VarChar(100)
+  user_name     String          @unique @db.VarChar(100)
+  image         String?         @db.VarChar(255)
+  password      String          @db.VarChar(255)
+  created_at    BigInt          @default(dbgenerated("EXTRACT(epoch FROM now())"))
+  updated_at    BigInt?
+  room_messages room_messages[]
+  room_users    room_users[]
+  rooms         rooms[]
 }
 
 model room_users {
@@ -31,12 +32,31 @@ model room_users {
 }
 
 model rooms {
-  id           Int          @id(map: "rooms_new_pkey") @default(autoincrement())
-  name         String       @db.VarChar(255)
-  last_message String?
-  created_by   String       @db.Uuid
-  created_at   BigInt       @default(dbgenerated("(EXTRACT(epoch FROM now()))::bigint"))
-  updated_at   BigInt?
-  room_users   room_users[]
-  users        users        @relation(fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_user")
+  id            Int             @id(map: "rooms_new_pkey") @default(autoincrement())
+  name          String          @db.VarChar(255)
+  last_message  String?
+  created_by    String          @db.Uuid
+  created_at    BigInt          @default(dbgenerated("(EXTRACT(epoch FROM now()))::bigint"))
+  updated_at    BigInt?
+  room_messages room_messages[]
+  room_users    room_users[]
+  users         users           @relation(fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_user")
+}
+
+model room_messages {
+  id                  BigInt          @id @default(autoincrement())
+  message             String
+  room_id             Int
+  sent_by             String          @db.Uuid
+  created_at          BigInt          @default(dbgenerated("EXTRACT(epoch FROM now())"))
+  updated_at          BigInt?
+  message_type        String          @default("text") @db.VarChar(50)
+  is_read             Boolean?        @default(false)
+  reply_to            BigInt?
+  deleted_at          BigInt?
+  status              Int             @default(1)
+  room_messages       room_messages?  @relation("room_messagesToroom_messages", fields: [reply_to], references: [id], onUpdate: NoAction, map: "fk_reply")
+  other_room_messages room_messages[] @relation("room_messagesToroom_messages")
+  rooms               rooms           @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_room")
+  users               users           @relation(fields: [sent_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
 }
