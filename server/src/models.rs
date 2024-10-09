@@ -102,3 +102,16 @@ pub struct RoomMessage {
     pub deleted_at: Option<i64>,
     pub status: i32,
 }
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, FromRow)]
+pub struct UpdateRoomMessage {
+    pub message: String,
+    pub id: i64,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, FromRow)]
+pub struct GetRoomsMessages {
+    pub room_id: i32,
+    pub page: Option<i64>,
+    pub page_size : Option<i64>
+}
