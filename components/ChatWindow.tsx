@@ -1,27 +1,34 @@
 "use client";
 import * as React from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
   ChatHeader,
+  Loader,
   MessageInput,
   NoData,
 } from "./index";
-import { avatarFLGen, ReceiveMessageT, UserT } from "@/utils";
+import { avatarFLGen, GroupT, RoomMessage, UserT } from "@/utils";
 import { cn } from "@/lib/utils";
-import { messages } from "@/utils/dummyMessages";
 import { useGroupStore } from "@/hooks";
+import useMessagesStore from "@/hooks/useMessagesStore";
 
 interface MessageWindowProps {
-  messages: ReceiveMessageT[];
+  messages: RoomMessage[];
   user: UserT;
+  loading: boolean;
+  group: GroupT;
 }
 
-const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
+const MessageWindow: React.FC<MessageWindowProps> = ({
+  messages,
+  user,
+  loading,
+  group,
+}) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -30,14 +37,26 @@ const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
     }
   }, [messages]);
 
+  if (loading) {
+    return (
+      <div
+        aria-label="chat-messages"
+        className="flex flex-col h-full w-full  border rounded-md p-2"
+      >
+        <Loader />
+      </div>
+    );
+  }
+
   return (
     <div
       aria-label="chat-messages"
       className="flex flex-col gap-2 h-full w-full overflow-y-auto border rounded-md p-2"
     >
       {messages.map((item) => {
-        const { sender, message, id } = item;
-        const isUserSender = sender.id === user.id;
+        const { sent_by, message, id } = item;
+        const sender = group.members?.find((item) => item.id === sent_by);
+        const isUserSender = sent_by === user.id;
 
         return (
           <div
@@ -49,22 +68,28 @@ const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
           >
             {!isUserSender && (
               <Avatar className="w-7 h-7">
-                <AvatarImage src={sender.image} />
-                <AvatarFallback>{avatarFLGen(sender.name)}</AvatarFallback>
+                <AvatarImage src={sender?.image} />
+                <AvatarFallback>
+                  {avatarFLGen(sender?.name || "")}
+                </AvatarFallback>
               </Avatar>
             )}
             <div
               className={cn(
                 "rounded-lg whitespace-pre-line text-sm max-w-[75%] px-3 py-2",
-                isUserSender ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted rounded-tl-none"
+                isUserSender
+                  ? "bg-primary text-primary-foreground rounded-tr-none"
+                  : "bg-muted rounded-tl-none"
               )}
             >
               {message}
             </div>
             {isUserSender && (
               <Avatar className="w-7 h-7">
-                <AvatarImage src={sender.image} />
-                <AvatarFallback>{avatarFLGen(sender.name)}</AvatarFallback>
+                <AvatarImage src={sender?.image} />
+                <AvatarFallback>
+                  {avatarFLGen(sender?.name || "")}
+                </AvatarFallback>
               </Avatar>
             )}
           </div>
@@ -76,24 +101,28 @@ const MessageWindow: React.FC<MessageWindowProps> = ({ messages, user }) => {
 };
 
 const ChatWindow = () => {
-  const {activeGroup} = useGroupStore();
-  const {data: session}  = useSession()
-  const router = useRouter();
+  const { activeGroup } = useGroupStore();
+  const { data: session } = useSession();
+  const { messages, fetchMessages, messagesLoading } = useMessagesStore();
 
-  if(!session?.user){
-    router.push('/login')
-    return null;     
+  if (!session?.user) {
+    return null;
   }
 
-  if(!activeGroup) {
-    return <NoData message="please select a group to chat" />
+  if (!activeGroup) {
+    return <NoData message="please select a group to chat" />;
   }
+
+  React.useEffect(() => {
+    if (activeGroup) {
+      console.log("getting called");
+      fetchMessages(activeGroup.id);
+    }
+  }, [activeGroup]);
+
   return (
     <div className="flex flex-col h-full w-full ">
-      <ChatHeader
-        group={activeGroup}
-        onGroupClick={() => {}}
-      />
+      <ChatHeader group={activeGroup} onGroupClick={() => {}} />
       <div
         aria-label="chat-container"
         className="flex flex-col gap-2 w-full h-full p-2 pb-4 overflow-hidden"
@@ -101,6 +130,8 @@ const ChatWindow = () => {
         <MessageWindow
           user={session?.user}
           messages={messages}
+          loading={messagesLoading}
+          group={activeGroup}
         />
         <MessageInput />
       </div>

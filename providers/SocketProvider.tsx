@@ -2,9 +2,10 @@
 import * as React from "react";
 import { useSession } from "next-auth/react";
 
-import { receivedMessageT, sendMessageT } from "@/utils/types";
+import { sendMessageT } from "@/utils/types";
 import { useGroupStore, useRoomStore } from "@/hooks";
 import { toast } from "@/components/index";
+import useMessagesStore from "@/hooks/useMessagesStore";
 
 type SocketProviderProps = {
   children: React.ReactNode;
@@ -15,7 +16,6 @@ type SocketContextType = {
   joinRoom: (roomId: string) => void;
   createRoom: (name: string) => void;
   sendMessage: (message: sendMessageT) => void;
-  messages: receivedMessageT[];
 };
 
 const SocketContext = React.createContext<SocketContextType | null>(null);
@@ -30,11 +30,11 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = React.useState<SocketContextType["socket"]>(null);
-  const [messages, setMessages] = React.useState<receivedMessageT[]>([]);
 
   const { data: session, status } = useSession();
   const { room } = useRoomStore();
-  const { groups, addGroup } = useGroupStore();
+  const { addGroup, activeGroup } = useGroupStore();
+  const { addMessage } = useMessagesStore();
 
   const joinRoom: SocketContextType["joinRoom"] = (roomId) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -100,11 +100,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
       switch (message?.chat_type) {
         case "message":
-          setMessages((prev) => [...prev, message]);
+          if (activeGroup?.id === message.message?.id) {
+            addMessage(message.message);
+          }
           break;
 
         case "info":
-          const room = message?.join_room ?  message.join_room : message.create_room;
+          const room = message?.join_room
+            ? message.join_room
+            : message.create_room;
           addGroup(room);
           break;
 
@@ -133,7 +137,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   return (
     <SocketContext.Provider
-      value={{ socket, joinRoom, createRoom, sendMessage, messages }}
+      value={{ socket, joinRoom, createRoom, sendMessage }}
     >
       {children}
     </SocketContext.Provider>

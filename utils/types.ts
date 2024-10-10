@@ -1,6 +1,6 @@
 export type sendMessageT = {
   message: string;
-  room_id: string;
+  room_id: number;
   sent_by: string;
 };
 
@@ -13,10 +13,11 @@ export type ReceiveMessageT = {
 };
 
 export type GroupT = {
-  id: string | number;
+  id: number;
   name: string;
   description?: string;
   group_photo?: string;
+  members: UserT[] | null;
 };
 
 export interface GroupDetailT extends GroupT {
@@ -25,7 +26,7 @@ export interface GroupDetailT extends GroupT {
 }
 
 export type UserT = {
-  id: string | number;
+  id: string;
   name: string;
   email: string;
   user_name: string;

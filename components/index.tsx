@@ -1,7 +1,6 @@
 export { default as Box } from "./Box";
 export { default as JoinGroup } from "./JoinGroup";
 export {default as CreateGroup} from './CreateGroup'
-export { default as Messages } from "./Messages";
 export { default as SendMessage } from "./SendMessage";
 export { default as Sidebar } from "./Sidebar";
 export { default as Layout } from "./Layout";

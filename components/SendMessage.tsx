@@ -1,21 +1,26 @@
 "use client"
 import React, { useState } from "react";
+import { useSession } from "next-auth/react";
 
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { useRoomStore } from "../hooks";
 import { useSocket } from "@/providers";
+import { useGroupStore } from "@/hooks";
 
 const SendMessage = () => {
   const [message, setMessage] = useState<string>("");
 
+  const {activeGroup} = useGroupStore();
+  const {data: session} = useSession()
   const { sendMessage } = useSocket();
-  const { room } = useRoomStore();
+
 
   const handleSendMessage = () => {
+    if(!session?.user.id || !activeGroup?.id) return;
     const _message = {
       message,
-      room_id: room,
+      room_id: activeGroup.id,
+      sent_by: session.user.id
     };
     sendMessage(_message);
     setMessage("");
