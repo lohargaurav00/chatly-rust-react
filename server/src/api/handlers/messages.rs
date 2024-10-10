@@ -1,5 +1,7 @@
 use actix_web::{delete, get, http::StatusCode, post, put, web, HttpResponse, Result};
+use chrono::Utc;
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::{
     models::{AddRoomMessage, GetRoomsMessages, RoomMessage, UpdateRoomMessage},
@@ -7,16 +9,23 @@ use crate::{
 };
 
 pub async fn message(db_pool: &PgPool, msg: AddRoomMessage) -> Result<RoomMessage, sqlx::Error> {
+    let (id, created_at) = match (msg.id, msg.created_at) {
+        (Some(id), Some(created_at)) => (id, created_at),
+        _ => (Uuid::new_v4(), Utc::now().timestamp())
+    };
+
     let message_result = sqlx::query_as::<_, RoomMessage>(
         r#"
-        INSERT INTO room_messages (message, room_id, sent_by)
-        VALUES ($1, $2, $3) 
+        INSERT INTO room_messages (id , message, room_id, sent_by , created_at)
+        VALUES ($1, $2, $3, $4, $5) 
         RETURNING *
         "#,
     )
+    .bind(id)
     .bind(msg.message)
     .bind(msg.room_id)
     .bind(msg.sent_by)
+    .bind(created_at)
     .fetch_one(db_pool)
     .await;
 
@@ -54,7 +63,7 @@ pub async fn update_message(
         r#"
         UPDATE room_messages 
         SET message = $1 , is_edited = true
-        WHERE id = $2
+        WHERE id = $2 AND status = 1
         RETURNING *
         "#,
     )
@@ -89,7 +98,7 @@ pub async fn route_update_message(
     }
 }
 
-pub async fn delete_message(db_pool: &PgPool, id: i64) -> Result<RoomMessage, sqlx::Error> {
+pub async fn delete_message(db_pool: &PgPool, id: Uuid) -> Result<RoomMessage, sqlx::Error> {
     let message_result = sqlx::query_as::<_, RoomMessage>(
         r#"
         UPDATE room_messages 
@@ -106,7 +115,7 @@ pub async fn delete_message(db_pool: &PgPool, id: i64) -> Result<RoomMessage, sq
 }
 
 #[delete("/delete-message/{id}")]
-pub async fn route_delete_message(db_pool: web::Data<PgPool>, id: web::Path<i64>) -> HttpResponse {
+pub async fn route_delete_message(db_pool: web::Data<PgPool>, id: web::Path<Uuid>) -> HttpResponse {
     let message_result = delete_message(db_pool.get_ref(), *id).await;
 
     match message_result {
@@ -135,7 +144,7 @@ pub async fn get_messages_by_room_id(
     data: GetRoomsMessages,
 ) -> Result<GetRoomMessagesResult, sqlx::Error> {
     let (limit, offset) = match (data.page_size, data.page) {
-        (Some(limit), Some(page)) => (limit as i64, (page - 1)  as i64 * limit as i64),
+        (Some(limit), Some(page)) => (limit as i64, (page - 1) as i64 * limit as i64),
         _ => (100, 0 as i64),
     };
 

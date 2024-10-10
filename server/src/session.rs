@@ -1,13 +1,14 @@
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
-use log::info;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use sqlx::PgPool;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
+use crate::models::{AddRoomMessage, RoomMessage};
 use crate::server::{self, ClientMessage, CreateRoom, JoinRoom};
 
 const HEARTBEAT: Duration = Duration::from_secs(5);
@@ -35,10 +36,9 @@ struct ClientInteraction {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ChatMessage {
-    id: Option<Uuid>,
-    chat_type: String,
     message: String,
     room_id: i32,
+    sent_by: Uuid,
 }
 
 impl Actor for MyWs {
@@ -97,7 +97,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
                 self.hb = Instant::now();
             }
             ws::Message::Text(text) => {
-                info!("recived msg : {}", text);
                 let json_msg = serde_json::from_str::<ClientInteraction>(&text.to_string());
                 if let Err(err) = json_msg {
                     println!("{err}");
@@ -107,7 +106,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
                 let inp_msg = json_msg.as_ref().unwrap();
                 match inp_msg.mode {
                     Mode::JoinRoom => {
-                        info!("joining room....");
                         let inp = serde_json::from_str::<JoinRoom>(&inp_msg.message);
                         if let Err(err) = inp {
                             println!("{err}");
@@ -145,20 +143,37 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
 
                         let inp_msg = inp.as_ref().unwrap();
 
-                        let chat_msg = ChatMessage {
-                            id: Some(self.id),
-                            chat_type: "message".to_string(),
+                        let epoche_date = Utc::now().timestamp();
+                        let uuid_id = Uuid::new_v4();
+
+                        let chat_msg = RoomMessage {
+                            id: uuid_id,
                             message: inp_msg.message.clone(),
                             room_id: inp_msg.room_id.clone(),
+                            sent_by: inp_msg.sent_by.clone(),
+                            created_at: epoche_date,
+                            updated_at: None,
+                            message_type: "text".to_string(),
+                            is_read: false,
+                            is_edited: false,
+                            reply_to: None,
+                            deleted_at: None,
+                            status: 1,
                         };
 
                         let msg = serde_json::to_string(&chat_msg).unwrap();
 
                         self.addr.do_send(ClientMessage {
-                            id: self.id,
                             msg,
                             room: inp_msg.room_id.clone(),
-                        })
+                            add_message: Some(AddRoomMessage {
+                                id: Some(uuid_id),
+                                message: inp_msg.message.clone(),
+                                room_id: inp_msg.room_id.clone(),
+                                sent_by: inp_msg.sent_by.clone(),
+                                created_at: Some(epoche_date),
+                            }),
+                        });
                     }
                 }
             }

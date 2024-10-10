@@ -12,8 +12,11 @@ use std::{
 };
 
 use crate::{
-    api::handlers::rooms::{create_room, get_rooms_with_members_ids, join_room_fn},
-    models::{JoinRoom as ModelJoinRoom, NewRoom},
+    api::handlers::{
+        messages::message,
+        rooms::{create_room, get_rooms_with_members_ids, join_room_fn},
+    },
+    models::{AddRoomMessage, JoinRoom as ModelJoinRoom, NewRoom},
 };
 
 #[derive(Message)]
@@ -31,9 +34,10 @@ pub struct Connect {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct ClientMessage {
-    pub id: Uuid,
+    // pub id: Uuid,
     pub msg: String,
     pub room: i32,
+    pub add_message: Option<AddRoomMessage>,
 }
 
 #[derive(Message)]
@@ -251,11 +255,21 @@ impl Handler<Disconnect> for ChatServer {
 
 impl Handler<ClientMessage> for ChatServer {
     type Result = ();
-    fn handle(&mut self, msg: ClientMessage, _: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ClientMessage, ctx: &mut Self::Context) -> Self::Result {
         let room_id = msg.room;
+        let db_pool = self.db_pool.clone().unwrap();
 
         if let Some(_) = self.rooms.get(&room_id) {
             self.send_message(&room_id, &msg.msg, None)
+        }
+
+        if let Some(add_message) = msg.add_message {
+            ctx.spawn(
+                async move {
+                    let _ = message(&db_pool, add_message).await;
+                }
+                .into_actor(self),
+            );
         }
     }
 }

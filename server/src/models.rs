@@ -85,20 +85,22 @@ pub struct AddRoomMessage {
     pub message: String,
     pub room_id: i32,
     pub sent_by: Uuid,
+    pub id : Option<Uuid>,
+    pub created_at : Option<i64>
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct RoomMessage {
-    pub id: i64,
+    pub id: Uuid,
     pub message: String,
     pub room_id: i32,
     pub sent_by: Uuid,
     pub created_at: i64,
     pub updated_at: Option<i64>,
     pub message_type: String,
-    pub is_read: Option<bool>,
+    pub is_read: bool,
     pub is_edited: bool,
-    pub reply_to: Option<i64>,
+    pub reply_to: Option<Uuid>,
     pub deleted_at: Option<i64>,
     pub status: i32,
 }
@@ -106,7 +108,7 @@ pub struct RoomMessage {
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, FromRow)]
 pub struct UpdateRoomMessage {
     pub message: String,
-    pub id: i64,
+    pub id: Uuid,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, FromRow)]
