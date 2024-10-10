@@ -52,30 +52,26 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   const createRoom: SocketContextType["createRoom"] = (name) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          mode: "CreateRoom",
-          message: JSON.stringify({
-            id: session?.user.id,
-            name,
-          }),
-        })
-      );
+      const message = JSON.stringify({
+        mode: "CreateRoom",
+        message: JSON.stringify({
+          id: session?.user.id,
+          name,
+        }),
+      });
+      socket.send(message);
     }
   };
 
-  const sendMessage: SocketContextType["sendMessage"] = (message) => {
+  const sendMessage: SocketContextType["sendMessage"] = (_message) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          mode: "Chat",
-          message: JSON.stringify({
-            chat_type: "send-message",
-            ...message,
-            room_id: room,
-          }),
-        })
-      );
+      const message = JSON.stringify({
+        mode: "Chat",
+        message: JSON.stringify(_message),
+      });
+
+      console.log("sending message: ", message);
+      socket.send(message);
     }
   };
 

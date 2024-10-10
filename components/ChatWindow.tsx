@@ -105,6 +105,12 @@ const ChatWindow = () => {
   const { data: session } = useSession();
   const { messages, fetchMessages, messagesLoading } = useMessagesStore();
 
+  React.useEffect(() => {
+    if (activeGroup) {
+      fetchMessages(activeGroup.id);
+    }
+  }, [activeGroup, fetchMessages]);
+
   if (!session?.user) {
     return null;
   }
@@ -113,19 +119,12 @@ const ChatWindow = () => {
     return <NoData message="please select a group to chat" />;
   }
 
-  React.useEffect(() => {
-    if (activeGroup) {
-      console.log("getting called");
-      fetchMessages(activeGroup.id);
-    }
-  }, [activeGroup]);
-
   return (
     <div className="flex flex-col h-full w-full ">
       <ChatHeader group={activeGroup} onGroupClick={() => {}} />
       <div
         aria-label="chat-container"
-        className="flex flex-col gap-2 w-full h-full p-2 pb-4 overflow-hidden"
+        className="flex flex-col gap-3 w-full h-full p-2 pb-4 overflow-hidden"
       >
         <MessageWindow
           user={session?.user}
