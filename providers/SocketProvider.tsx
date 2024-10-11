@@ -32,7 +32,6 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = React.useState<SocketContextType["socket"]>(null);
 
   const { data: session, status } = useSession();
-  const { room } = useRoomStore();
   const { addGroup, activeGroup } = useGroupStore();
   const { addMessage } = useMessagesStore();
 
@@ -85,7 +84,6 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     _socket.onopen = () => {
       console.log("WebSocket connected");
-      // _socket.send(JSON.stringify({ type: "text", data: "pinging..." }));
     };
 
     _socket.onmessage = (event) => {
@@ -96,8 +94,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
       switch (message?.chat_type) {
         case "message":
-          if (activeGroup?.id === message.message?.id) {
-            addMessage(message.message);
+          let msg = JSON.parse(message.message);
+
+          if (activeGroup?.id === msg?.room_id) {
+            addMessage(msg);
           }
           break;
 
@@ -129,7 +129,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     return () => {
       _socket.close();
     };
-  }, [session, status]);
+  }, [session, status, activeGroup]);
 
   return (
     <SocketContext.Provider

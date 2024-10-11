@@ -1,16 +1,29 @@
 import * as React from "react";
 import { MdSend } from "react-icons/md";
+import { useSession } from "next-auth/react";
 
 import { Button, Textarea } from "./ui";
 import { cn } from "@/lib/utils";
 import { IconSize } from "@/utils";
+import { useSocket } from "@/providers";
+import { useGroupStore } from "@/hooks";
 
 const MessageInput = () => {
   const [message, setMessage] = React.useState<string>("");
 
+  const { activeGroup } = useGroupStore();
+  const { data: session } = useSession();
+  const { sendMessage } = useSocket();
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(message);
+    if (
+      activeGroup?.id === undefined ||
+      activeGroup?.id === null ||
+      !session?.user?.id
+    )
+      return;
+    sendMessage({ room_id: activeGroup.id, message, sent_by: session.user.id });
     setMessage("");
   };
 

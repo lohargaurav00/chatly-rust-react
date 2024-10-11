@@ -260,7 +260,8 @@ impl Handler<ClientMessage> for ChatServer {
         let db_pool = self.db_pool.clone().unwrap();
 
         if let Some(_) = self.rooms.get(&room_id) {
-            self.send_message(&room_id, &msg.msg, None)
+            let new_msg = json!({"chat_type": "message", "message": msg.msg }).to_string();
+            self.send_message(&room_id, &new_msg, None)
         }
 
         if let Some(add_message) = msg.add_message {
