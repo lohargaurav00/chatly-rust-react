@@ -6,13 +6,12 @@ use routes::{greet, ws_handler};
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 
-
 mod api;
+mod models;
 mod routes;
 mod server;
 mod session;
 mod utils;
-mod models;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -20,6 +19,10 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let port = env::var("PORT")
+        .expect("PORT must be set")
+        .parse::<u16>()
+        .unwrap();
     let db_pool = match PgPoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
@@ -35,7 +38,6 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-
     let server = server::ChatServer::new().start();
 
     HttpServer::new(move || {
@@ -49,7 +51,7 @@ async fn main() -> std::io::Result<()> {
             .route("/ws/{user_id}", web::get().to(ws_handler))
             .configure(api::init_routes)
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind(("0.0.0.0", port))?
     .workers(2)
     .run()
     .await
