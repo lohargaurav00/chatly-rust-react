@@ -9,21 +9,17 @@ type ErrorProps = {
 };
 
 const Error: React.FC<ErrorProps> = ({ error, reset }) => {
+
+
   React.useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
-    <Box>
+    <Box className="flex flex-col gap-2 w-full h-full justify-center items-center">
       <h2>Something went wrong!</h2>
-      <Button
-        onClick={
-          // Attempt to recover by trying to re-render the segment
-          () => reset()
-        }
-      >
-        Try again
-      </Button>
+      <p>Error : {error.message}</p>
+      <Button onClick={reset}>Try again</Button>
     </Box>
   );
 };

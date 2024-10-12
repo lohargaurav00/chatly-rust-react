@@ -1,8 +1,5 @@
 export const avatarFLGen = (str: string): string => {
-  if (!str) {
-    throw new Error("AvatarFLGen: No string provided");
-  }
-
+  if (!str) return "";
   const arrStr = str.split(" ");
 
   let firstLetter = arrStr[0][0];

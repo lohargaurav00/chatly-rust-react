@@ -3,7 +3,7 @@ import * as React from "react";
 import { useSession } from "next-auth/react";
 
 import { sendMessageT } from "@/utils/types";
-import { useGroupStore, useRoomStore } from "@/hooks";
+import { useGroupStore} from "@/hooks";
 import { toast } from "@/components/index";
 import useMessagesStore from "@/hooks/useMessagesStore";
 
