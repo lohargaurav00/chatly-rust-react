@@ -13,12 +13,13 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { useModalStore } from "../hooks";
 import { useSocket } from "@/providers";
-import { toast } from "./ui";
+import { useToast } from "./ui/index";
 
 const CreateGroup = () => {
   const [name, setName] = useState<string>("")
   const { createGroup, setCreateGroup } = useModalStore();
   const { createRoom} = useSocket();
+  const { toast } = useToast();
   
   const handleJoinRoom = () => {
     if(name.length <= 0) {

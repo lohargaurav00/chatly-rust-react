@@ -4,8 +4,8 @@ import { useSession } from "next-auth/react";
 
 import { sendMessageT } from "@/utils/types";
 import { useGroupStore} from "@/hooks";
-import { toast } from "@/components/index";
 import useMessagesStore from "@/hooks/useMessagesStore";
+import { useToast } from "@/components/index";
 
 type SocketProviderProps = {
   children: React.ReactNode;
@@ -31,6 +31,7 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = React.useState<SocketContextType["socket"]>(null);
 
+  const { toast } = useToast();
   const { data: session, status } = useSession();
   const { addGroup, activeGroup } = useGroupStore();
   const { addMessage } = useMessagesStore();
