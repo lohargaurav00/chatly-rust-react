@@ -1,32 +1,23 @@
 # Use the pre-built Docker image with cargo-chef and the Rust toolchain
-FROM lukemathwalker/cargo-chef:latest-rust-1.81 AS chef
+FROM rust:alpine AS builder
+
+# Set the working directory
 WORKDIR /app
 
-# Stage for planning the build
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# Stage for building the application
-FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
-
-# Build dependencies (this creates a cached layer)
-RUN cargo chef cook --recipe-path recipe.json
+# Adding necessary build packages
+RUN apk add --no-cache openssl-dev libc-dev openssl-libs-static
 
 # Copy source code and build the application
 COPY . .
+
+# Build the application
 RUN cargo build --release 
 
 # Stage for the final application image
-FROM debian:bookworm-slim AS server
+FROM alpine:3.20 AS server
 
 # Install necessary packages
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
-    libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache ca-certificates
 
 # Copy the built application from the builder stage
 COPY --from=builder /app/target/release/server /usr/local/bin/server
