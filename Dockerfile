@@ -27,6 +27,7 @@ WORKDIR /app
 # Copy necessary files for production
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma/ca.pem ./ca.pem
 
