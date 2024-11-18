@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Chatly: A Real-Time Chat Application
 
-## Getting Started
+![Chatly App Demo](./public/assets/images/demo.png)
 
-First, run the development server:
+## Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Chatly is a real-time chat application built with a modern tech stack, including **Rust**, **React**, **Docker**, and **Vercel**. The app allows users to join groups, send messages, and interact with others in a sleek, dark-themed UI.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Live Demo**: [Chatly App](https://chatly-react-rust.vercel.app/)
+- **Repository**: [GitHub](https://github.com/lohargaurav00/chatly-rust-react)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- **Group-based Chat**: Join and interact in specific groups.
+- **Real-Time Communication**: Experience seamless real-time messaging.
+- **Responsive Design**: Built for a consistent experience on desktop and mobile.
+- **Dockerized Setup**: Run the application effortlessly using Docker and Docker Compose.
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+### Frontend
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **React.js**
+- **Zustand**: For state management
+- **Tailwind CSS**: For styling
+- **NextAuth**: For authentication
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### Backend
 
-## Deploy on Vercel
+- **Rust**: Powered by Actix-web for high-performance backend services
+- **PostgreSQL**: For database management
+- **WebSocket Support**: Using Actix-Socket for real-time communication
+- **SQLx**: For interacting with PostgreSQL in an asynchronous and type-safe manner
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### DevOps
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- **Docker & Docker Compose**: For containerized development and deployment
+- **Deployment**: Frontend on **Vercel** and backend on **Render**
